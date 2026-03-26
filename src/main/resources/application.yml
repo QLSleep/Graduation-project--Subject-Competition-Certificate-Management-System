@@ -3,7 +3,7 @@ spring:
     name: competition_cert_system
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/competition_cert_db
+    url: jdbc:postgresql://localhost:5432/competition_cert_db?serverTimezone=Asia/Shanghai&charSet=utf8
     username: postgres
     password: 123456
   data:

@@ -1,7 +1,9 @@
 package cn.guet.competition_cert_system.common;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+@AllArgsConstructor
 @Getter
 public enum ResultCode {
   SUCCESS(20000, "操作成功"),
@@ -16,9 +18,4 @@ public enum ResultCode {
 
   private final int code;
   private final String message;
-
-  ResultCode(int code, String message) {
-    this.code = code;
-    this.message = message;
-  }
 }

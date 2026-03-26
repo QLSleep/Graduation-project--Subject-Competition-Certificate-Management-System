@@ -9,10 +9,8 @@ import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import cn.guet.competition_cert_system.common.ResultCode;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 
 @Component
@@ -30,7 +28,6 @@ public class JWTUtil {
   @Value("${jwt.access-expiration}")
   private Long refreshExpiration;
 
-  // TODO
   // 生成 Access Token
   public String generateAccessToken(Long userId, String username, String realName, List<String> roles, Long collegeId,
       String dataScope) {

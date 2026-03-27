@@ -15,6 +15,7 @@ spring:
 
 mybatis-plus:
   type-aliases-package: cn.guet.competition_cert_system.entity
+  mapper-locations: classpath*:mapper/*.xml
   configuration:
     map-underscore-to-camel-case: true
 
@@ -25,3 +26,6 @@ jwt:
   secret: your-secret-key-at-least-256-bits-long-for-hs256-algorithm  # JWT 签名密钥（生产环境请换复杂字符串，至少32个字符）
   access-expiration: 86400000  # Access Token 过期时间（毫秒）, 默认 24 小时 = 86400000ms
   refresh-expiration: 1296000000 # Refresh Token 过期时间, 默认 15 天
+
+file:
+  upload-path: C:/MINE_FILE_QZK/Code_Project_JAVA/certificates # 证书相关图片存放位置

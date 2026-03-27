@@ -11,7 +11,4 @@ public enum CertType {
 
   private final int code; // 类型码
   private final String desc; // 类型描述
-
-
-
 }

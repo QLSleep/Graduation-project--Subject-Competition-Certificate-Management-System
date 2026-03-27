@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.guet.competition_cert_system.mapper.CertificateMapper">
+
+  <!-- 结果集映射 -->
+  <resultMap id="BaseResultMap" type="cn.guet.competition_cert_system.entity.Certificate">
+    <id column="id" property="id" javaType="java.lang.Long" />
+    <result column="cert_type" property="certType"
+      javaType="cn.guet.competition_cert_system.common.CertType" />
+    <result column="cert_number" property="certNumber" javaType="java.lang.String" />
+    <result column="owner_college_id" property="ownerCollegeId" javaType="java.lang.Long" />
+    <result column="created_by" property="createdBy" javaType="java.lang.Long" />
+    <result column="submitter_user_id" property="submitterUserId" javaType="java.lang.Long" />
+    <result column="reviewer_user_id" property="reviewerUserId" javaType="java.lang.Long" />
+    <result column="event_id" property="eventId" javaType="java.lang.Long" />
+    <result column="session_id" property="sessionId" javaType="java.lang.Long" />
+    <result column="group_id" property="groupId" javaType="java.lang.Long" />
+    <result column="cert_title" property="certTitle" javaType="java.lang.String" />
+    <result column="award_level" property="awardLevel" javaType="java.lang.String" />
+    <result column="issu_date" property="issuDate" javaType="java.time.LocalDate" />
+    <result column="resource_key" property="resourceKey" javaType="java.lang.String" />
+    <result column="status" property="status"
+      javaType="cn.guet.competition_cert_system.common.CertStatus" />
+    <result column="remark" property="remark" javaType="java.lang.String" />
+    <result column="created_at" property="createdAt" javaType="java.time.Instant" />
+    <result column="updated_at" property="updatedAt" javaType="java.time.Instant" />
+  </resultMap>
+
+  <!-- 基础查询列 -->
+  <sql id="Base_Column_List"> id, cert_type, cert_number, owner_college_id, created_by,
+    submitter_user_id, reviewer_user_id, event_id, session_id, group_id, cert_title, award_level,
+    issu_date, resource_key, status, remark, created_at, updated_at </sql>
+
+  <!-- UserCertificateDetailVO 结果集映射 -->
+  <resultMap id="UserCertificateDetailVOMap" type="cn.guet.competition_cert_system.vo.UserCertificateDetailVO">
+    <id column="id" property="id" javaType="java.lang.Long"/>
+    <result column="cert_type" property="certType" javaType="cn.guet.competition_cert_system.common.CertType"/>
+    <result column="cert_number" property="certNumber" javaType="java.lang.String"/>
+    <result column="cert_title" property="certTitle" javaType="java.lang.String"/>
+    <result column="award_level" property="awardLevel" javaType="java.lang.String"/>
+    <result column="issu_date" property="issuDate" javaType="java.time.LocalDate"/>
+    <result column="resource_key" property="resourceKey" javaType="java.lang.String"/>
+    <result column="status" property="status" javaType="cn.guet.competition_cert_system.common.CertStatus"/>
+    <result column="remark" property="remark" javaType="java.lang.String"/>
+    <result column="created_at" property="createdAt" javaType="java.time.Instant"/>
+    <result column="updated_at" property="updatedAt" javaType="java.time.Instant"/>
+    <!-- 额外字段 -->
+    <result column="college_name" property="collegeName" javaType="java.lang.String"/>
+    <result column="creator_name" property="creatorName" javaType="java.lang.String"/>
+    <result column="submitter_name" property="submitterName" javaType="java.lang.String"/>
+    <result column="reviewer_name" property="reviewerName" javaType="java.lang.String"/>
+    <result column="event_name" property="eventName" javaType="java.lang.String"/>
+    <result column="session_name" property="sessionName" javaType="java.lang.String"/>
+    <result column="group_name" property="groupName" javaType="java.lang.String"/>
+    
+    <!-- 关联映射 -->
+    <association property="instructor" javaType="cn.guet.competition_cert_system.vo.CertificateTeacherVO" resultMap="CertificateTeacherVOMap"/>
+    
+    <!-- 集合映射 -->
+    <collection property="recipients" ofType="cn.guet.competition_cert_system.vo.CertificateStudentVO" resultMap="CertificateStudentVOMap"/>
+  </resultMap>
+
+  <!-- CertificateStudentVO 结果集映射 -->
+  <resultMap id="CertificateStudentVOMap" type="cn.guet.competition_cert_system.vo.CertificateStudentVO">
+    <result column="student_username" property="username" javaType="java.lang.String"/>
+    <result column="student_real_name" property="realName" javaType="java.lang.String"/>
+    <result column="student_email" property="email" javaType="java.lang.String"/>
+    <result column="student_phone" property="phone" javaType="java.lang.String"/>
+    <result column="student_id" property="studentId" javaType="java.lang.String"/>
+    <result column="student_college_name" property="collegeName" javaType="java.lang.String"/>
+    <result column="student_enabled" property="enabled" javaType="java.lang.Boolean"/>
+    <result column="student_created_at" property="createdAt" javaType="java.time.Instant"/>
+    <result column="student_updated_at" property="updatedAt" javaType="java.time.Instant"/>
+  </resultMap>
+
+  <!-- CertificateTeacherVO 结果集映射 -->
+  <resultMap id="CertificateTeacherVOMap" type="cn.guet.competition_cert_system.vo.CertificateTeacherVO">
+    <result column="teacher_username" property="username" javaType="java.lang.String"/>
+    <result column="teacher_real_name" property="realName" javaType="java.lang.String"/>
+    <result column="teacher_email" property="email" javaType="java.lang.String"/>
+    <result column="teacher_phone" property="phone" javaType="java.lang.String"/>
+    <result column="teacher_id" property="teacherId" javaType="java.lang.String"/>
+    <result column="teacher_college_name" property="collegeName" javaType="java.lang.String"/>
+    <result column="teacher_enabled" property="enabled" javaType="java.lang.Boolean"/>
+    <result column="teacher_created_at" property="createdAt" javaType="java.time.Instant"/>
+    <result column="teacher_updated_at" property="updatedAt" javaType="java.time.Instant"/>
+  </resultMap>
+
+  <!-- 查询指定用户的证书列表及其详情 -->
+  <select id="getUserCertificates" resultMap="UserCertificateDetailVOMap" parameterType="java.lang.Long">
+    SELECT 
+      c.id,
+      c.cert_type,
+      c.cert_number,
+      col.college_name,
+      creator.username as creator_name,
+      submitter.username as submitter_name,
+      reviewer.username as reviewer_name,
+      ce.event_name,
+      cs.session_name,
+      sg.group_name,
+      c.cert_title,
+      c.award_level,
+      c.issu_date,
+      c.resource_key,
+      c.status,
+      c.remark,
+      c.created_at,
+      c.updated_at,
+      -- 学生获得者信息
+      u_student.username as student_username,
+      u_student.real_name as student_real_name,
+      u_student.email as student_email,
+      u_student.phone as student_phone,
+      u_student.student_id,
+      col_student.college_name as student_college_name,
+      u_student.enabled as student_enabled,
+      u_student.created_at as student_created_at,
+      u_student.updated_at as student_updated_at,
+      -- 指导教师信息
+      u_teacher.username as teacher_username,
+      u_teacher.real_name as teacher_real_name,
+      u_teacher.email as teacher_email,
+      u_teacher.phone as teacher_phone,
+      u_teacher.teacher_id,
+      col_teacher.college_name as teacher_college_name,
+      u_teacher.enabled as teacher_enabled,
+      u_teacher.created_at as teacher_created_at,
+      u_teacher.updated_at as teacher_updated_at
+    FROM certificate c
+    -- 关联学院信息
+    LEFT JOIN college col ON c.owner_college_id = col.id
+    -- 关联创建人、提交人、审核人
+    LEFT JOIN sys_user creator ON c.created_by = creator.id
+    LEFT JOIN sys_user submitter ON c.submitter_user_id = submitter.id
+    LEFT JOIN sys_user reviewer ON c.reviewer_user_id = reviewer.id
+    -- 关联赛事、赛届、科目组别
+    LEFT JOIN competition_event ce ON c.event_id = ce.id
+    LEFT JOIN competition_session cs ON c.session_id = cs.id
+    LEFT JOIN subject_group sg ON c.group_id = sg.id
+    -- 关联证书获得者（学生）
+    LEFT JOIN certificate_recipient cr ON c.id = cr.certificate_id
+    LEFT JOIN sys_user u_student ON cr.recipient_user_id = u_student.id
+    LEFT JOIN college col_student ON u_student.college_id = col_student.id
+    -- 关联指导教师
+    LEFT JOIN certificate_instructor ci ON c.id = ci.certificate_id
+    LEFT JOIN sys_user u_teacher ON ci.instructor_user_id = u_teacher.id
+    LEFT JOIN college col_teacher ON u_teacher.college_id = col_teacher.id
+    WHERE 
+      c.submitter_user_id = #{userId} 
+      OR c.create_by = #{userId}
+      OR cr.recipient_user_id = #{userId}
+      OR ci.instructor_user_id = #{userId}
+    ORDER BY c.created_at DESC, c.id
+  </select>
+</mapper>

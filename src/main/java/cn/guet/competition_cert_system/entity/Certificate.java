@@ -26,7 +26,7 @@ public class Certificate {
 
   private Long ownerCollegeId;
 
-  private Long createBy;
+  private Long createdBy;
 
   private Long submitterUserId;
 

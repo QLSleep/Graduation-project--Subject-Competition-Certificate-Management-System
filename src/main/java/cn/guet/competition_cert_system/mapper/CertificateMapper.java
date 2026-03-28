@@ -27,11 +27,21 @@ public interface CertificateMapper extends BaseMapper<Certificate> {
    */
   UserCertificateDetailVO getCertificateDetailById(Long certId);
 
-  /** 查看指定教师所指导的学生的证书 */
-  void getStudentCertificatesByTeacher();
+  /**
+   * 查看指定教师所指导的学生的证书列表
+   * @param teacherUserId 教师用户ID
+   * @return 返回 {@link UserCertificateDetailVO} 列表，包含证书详情和学生获得者信息
+   */
+  List<UserCertificateDetailVO> getStudentCertificatesByTeacher(Long teacherUserId);
 
-  /** 查看指定学院所有证书 */
-  void getCollegeCertificates();
+    /**
+     * 查看指定学院所有证书
+     * - STUDENT 类型：按证书聚合（多个学生）
+     * - INSTRUCTOR 类型：不聚合，每个教师单独一条记录
+     * @param collegeId 学院ID
+     * @return 返回 {@link UserCertificateDetailVO} 列表
+     */
+    List<UserCertificateDetailVO> getCollegeCertificates(Long collegeId);
 
   /** 查看所有证书 */
   void getAllCertificates();

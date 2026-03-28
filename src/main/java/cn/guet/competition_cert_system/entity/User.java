@@ -1,6 +1,6 @@
 package cn.guet.competition_cert_system.entity;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -35,7 +35,7 @@ public class User {
 
   private Boolean enabled;
 
-  private Instant createdAt;
+  private LocalDateTime createdAt;
 
-  private Instant updatedAt;
+  private LocalDateTime updatedAt;
 }

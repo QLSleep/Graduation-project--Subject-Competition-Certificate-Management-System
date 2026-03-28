@@ -1,6 +1,6 @@
 package cn.guet.competition_cert_system.entity;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.LocalDate;
 
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -29,7 +29,7 @@ public class CompetitionSession {
 
   private LocalDate endDate;
 
-  private Instant createdAt;
+  private LocalDateTime createdAt;
 
-  private Instant updatedAt;
+  private LocalDateTime updatedAt;
 }

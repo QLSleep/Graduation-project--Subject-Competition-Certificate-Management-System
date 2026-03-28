@@ -1,6 +1,8 @@
 package cn.guet.competition_cert_system.service;
 
-import cn.guet.competition_cert_system.common.CertPermission;
+import cn.guet.competition_cert_system.common.DataScope;
+import cn.guet.competition_cert_system.vo.UserCertificateDetailVO;
+
 import java.util.List;
 
 public interface CertificateService {
@@ -10,24 +12,37 @@ public interface CertificateService {
     /**
      * 查看指定单个用户证书列表
      * @param userId 用户ID
-     * @param permission 权限级别
-     * @return 根据权限返回完整VO(ALL/COLLEGE)或精简VO(RELATED/SELF)
+     * @param dataScope 数据可见范围
+     * @return 根据范围返回完整VO(ALL/COLLEGE)或精简VO(RELATED/SELF)
      */
-    List<Object> getUserCertificates(Long userId, CertPermission permission);
+    List<Object> getUserCertificates(Long userId, DataScope dataScope);
 
     /**
      * 查看指定个人单张证书详情
      * @param certId 证书ID
-     * @param permission 权限级别
-     * @return 根据权限返回完整VO或精简VO
+     * @param dataScope 数据可见范围
+     * @return 根据范围返回完整VO或精简VO
      */
-    Object getCertificateDetail(Long certId, CertPermission permission);
+    Object getCertificateDetail(Long certId, DataScope dataScope);
 
-    /** 查看指定教师所指导的学生的证书 */
-    void getStudentCertificatesByTeacher();
+    /**
+     * 查看指定教师所指导的学生的证书列表
+     * @param teacherUserId 教师用户ID
+     * @param dataScope 数据可见范围
+     * @return 根据范围返回完整VO或精简VO
+     */
+    List<Object> getStudentCertificatesByTeacher(Long teacherUserId, DataScope dataScope);
 
-    /** 查看指定学院所有证书 */
-    void getCollegeCertificates();
+    /**
+     * 查看指定学院所有证书
+     * - STUDENT 证书：按证书聚合（多个学生）
+     * - INSTRUCTOR 证书：不聚合，每个教师单独一条记录
+     * - 始终返回完整VO
+     * 注意：权限校验在拦截器/Controller 层完成，Service 只做业务逻辑
+     * @param collegeId 学院ID
+     * @return 完整 UserCertificateDetailVO 列表
+     */
+    List<UserCertificateDetailVO> getCollegeCertificates(Long collegeId);
 
     /** 查看所有证书 */
     void getAllCertificates();

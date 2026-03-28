@@ -3,7 +3,7 @@ package cn.guet.competition_cert_system.entity;
 import cn.guet.competition_cert_system.common.CertStatus;
 import cn.guet.competition_cert_system.common.CertType;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.LocalDate;
 
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -38,6 +38,8 @@ public class Certificate {
 
   private Long groupId;
 
+  private Long categoryId;
+
   private String certTitle;
 
   private String awardLevel;
@@ -50,7 +52,7 @@ public class Certificate {
 
   private String remark;
 
-  private Instant createdAt;
+  private LocalDateTime createdAt;
 
-  private Instant updatedAt;
+  private LocalDateTime updatedAt;
 }

@@ -1,6 +1,6 @@
 package cn.guet.competition_cert_system.entity;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -21,5 +21,5 @@ public class UserRole {
 
   private Long roleId;
 
-  private Instant createdAt;
+  private LocalDateTime createdAt;
 }

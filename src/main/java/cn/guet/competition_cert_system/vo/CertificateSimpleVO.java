@@ -3,8 +3,8 @@ package cn.guet.competition_cert_system.vo;
 import cn.guet.competition_cert_system.common.CertStatus;
 import cn.guet.competition_cert_system.common.CertType;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -14,7 +14,6 @@ import lombok.NoArgsConstructor;
  */
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 public class CertificateSimpleVO {
 
     /** 证书ID */
@@ -38,6 +37,12 @@ public class CertificateSimpleVO {
     /** 科目组别 */
     private String groupName;
 
+    /** 赛类名称 */
+    private String categoryName;
+
+    /** 赛事级别 */
+    private String level;
+
     /** 证书标题 */
     private String certTitle;
 
@@ -56,9 +61,56 @@ public class CertificateSimpleVO {
     /** 备注 */
     private String remark;
 
-    /** 学生获得者列表（只显示姓名+学号） */
+    // ========== 以下为内部字段 ==========
+
+    /** 学生姓名数组 */
+    private String[] studentNames;
+
+    /** 学生学号数组 */
+    private String[] studentIds;
+
+    /** 教师姓名数组 */
+    private String[] teacherNames;
+
+    /** 教师工号数组 */
+    private String[] teacherIds;
+
+    // ========== 聚合后的 VO 列表 ==========
+
+    /** 学生获得者列表 */
     private List<CertificateStudentVO> recipients;
 
-    /** 指导教师（只显示姓名+教师号） */
-    private CertificateTeacherVO instructor;
+    /** 指导教师列表（支持多教师） */
+    private List<CertificateTeacherVO> instructors;
+
+    /**
+     * 组装 recipients 和 instructors 列表
+     */
+    public void assemble() {
+        this.recipients = new ArrayList<>();
+        if (studentNames != null && studentIds != null) {
+            int len = Math.min(studentNames.length, studentIds.length);
+            for (int i = 0; i < len; i++) {
+                if (studentNames[i] != null) {
+                    CertificateStudentVO vo = new CertificateStudentVO();
+                    vo.setRealName(studentNames[i]);
+                    vo.setStudentId(studentIds[i]);
+                    this.recipients.add(vo);
+                }
+            }
+        }
+
+        this.instructors = new ArrayList<>();
+        if (teacherNames != null && teacherIds != null) {
+            int len = Math.min(teacherNames.length, teacherIds.length);
+            for (int i = 0; i < len; i++) {
+                if (teacherNames[i] != null) {
+                    CertificateTeacherVO vo = new CertificateTeacherVO();
+                    vo.setRealName(teacherNames[i]);
+                    vo.setTeacherId(teacherIds[i]);
+                    this.instructors.add(vo);
+                }
+            }
+        }
+    }
 }

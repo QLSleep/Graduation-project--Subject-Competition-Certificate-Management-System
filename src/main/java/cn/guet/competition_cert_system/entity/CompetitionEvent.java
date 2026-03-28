@@ -1,6 +1,8 @@
 package cn.guet.competition_cert_system.entity;
 
-import java.time.Instant;
+import cn.guet.competition_cert_system.common.CompetitionLevel;
+
+import java.time.LocalDateTime;
 
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -21,7 +23,7 @@ public class CompetitionEvent {
 
   private String abbreviation; // 赛事缩写
 
-  private String level;
+  private CompetitionLevel level; // 赛事级别：校级、市级、省级、国家级、全球
 
   private String sponsor; // 主办方
 
@@ -29,7 +31,7 @@ public class CompetitionEvent {
 
   private String description;
 
-  private Instant createdAt;
+  private LocalDateTime createdAt;
 
-  private Instant updatedAt;
+  private LocalDateTime updatedAt;
 }

@@ -1,6 +1,6 @@
 package cn.guet.competition_cert_system.service.impl;
 
-import cn.guet.competition_cert_system.common.CertPermission;
+import cn.guet.competition_cert_system.common.DataScope;
 import cn.guet.competition_cert_system.mapper.CertificateMapper;
 import cn.guet.competition_cert_system.service.CertificateService;
 import cn.guet.competition_cert_system.vo.CertificateSimpleVO;
@@ -21,16 +21,13 @@ public class CertificateServiceImpl implements CertificateService {
     private final CertificateMapper certificateMapper;
 
     @Override
-    public List<Object> getUserCertificates(Long userId, CertPermission permission) {
-        // 查询完整的证书详情
+    public List<Object> getUserCertificates(Long userId, DataScope dataScope) {
         List<UserCertificateDetailVO> fullList = certificateMapper.getUserCertificates(userId);
+        fullList.forEach(UserCertificateDetailVO::assemble);
 
-        // 根据权限决定返回类型
-        if (isHighPermission(permission)) {
-            // ALL/COLLEGE: 返回完整VO
+        if (isHighPermission(dataScope)) {
             return new ArrayList<>(fullList);
         } else {
-            // RELATED/SELF: 转换为精简VO
             return fullList.stream()
                     .map(this::convertToSimple)
                     .collect(Collectors.toList());
@@ -38,14 +35,16 @@ public class CertificateServiceImpl implements CertificateService {
     }
 
     @Override
-    public Object getCertificateDetail(Long certId, CertPermission permission) {
+    public Object getCertificateDetail(Long certId, DataScope dataScope) {
         UserCertificateDetailVO fullVO = certificateMapper.getCertificateDetailById(certId);
 
         if (fullVO == null) {
             return null;
         }
 
-        if (isHighPermission(permission)) {
+        fullVO.assemble();
+
+        if (isHighPermission(dataScope)) {
             return fullVO;
         } else {
             return convertToSimple(fullVO);
@@ -53,10 +52,10 @@ public class CertificateServiceImpl implements CertificateService {
     }
 
     /**
-     * 判断是否为高级权限（可查看完整信息）
+     * 判断是否为高级数据范围（可查看完整信息）
      */
-    private boolean isHighPermission(CertPermission permission) {
-        return permission == CertPermission.ALL || permission == CertPermission.COLLEGE;
+    private boolean isHighPermission(DataScope dataScope) {
+        return dataScope == DataScope.ALL || dataScope == DataScope.COLLEGE;
     }
 
     /**
@@ -68,30 +67,46 @@ public class CertificateServiceImpl implements CertificateService {
         simple.setCertType(full.getCertType());
         simple.setCertNumber(full.getCertNumber());
         simple.setCollegeName(full.getCollegeName());
-        // 敏感字段已省略：creatorName, submitterName, reviewerName
         simple.setEventName(full.getEventName());
         simple.setSessionName(full.getSessionName());
         simple.setGroupName(full.getGroupName());
+        simple.setCategoryName(full.getCategoryName());
+        simple.setLevel(full.getLevel());
         simple.setCertTitle(full.getCertTitle());
         simple.setAwardLevel(full.getAwardLevel());
         simple.setIssuDate(full.getIssuDate());
         simple.setResourceKey(full.getResourceKey());
         simple.setStatus(full.getStatus());
         simple.setRemark(full.getRemark());
-        // 敏感字段已省略：createdAt, updatedAt
         simple.setRecipients(full.getRecipients());
-        simple.setInstructor(full.getInstructor());
+        simple.setInstructors(full.getInstructors());
         return simple;
     }
 
     @Override
-    public void getStudentCertificatesByTeacher() {
-        throw new UnsupportedOperationException("Unimplemented method 'getStudentCertificatesByTeacher'");
+    public List<Object> getStudentCertificatesByTeacher(Long teacherUserId, DataScope dataScope) {
+        List<UserCertificateDetailVO> fullList = certificateMapper.getStudentCertificatesByTeacher(teacherUserId);
+        fullList.forEach(UserCertificateDetailVO::assemble);
+
+        if (isHighPermission(dataScope)) {
+            return new ArrayList<>(fullList);
+        } else {
+            return fullList.stream()
+                    .map(this::convertToSimple)
+                    .collect(Collectors.toList());
+        }
     }
 
     @Override
-    public void getCollegeCertificates() {
-        throw new UnsupportedOperationException("Unimplemented method 'getCollegeCertificates'");
+    public List<UserCertificateDetailVO> getCollegeCertificates(Long collegeId) {
+        // TODO [权限认证] 补充时机：拦截器/Controller 层权限框架搭建完成后
+        //   - RELATED/SELF 权限：拦截器层直接拒绝
+        //   - COLLEGE 权限：拦截器层校验当前用户是否属于该 collegeId
+        //   - ALL 权限：拦截器层通过
+        // Service 层不做权限判断，只负责业务逻辑
+        List<UserCertificateDetailVO> fullList = certificateMapper.getCollegeCertificates(collegeId);
+        fullList.forEach(UserCertificateDetailVO::assemble);
+        return fullList;
     }
 
     @Override

@@ -31,13 +31,13 @@ public class UserCertificateDetailVO {
     private String collegeName;
     
     /** 创建人 */
-    private String creatorName;
+    private String creatorName; // 普通用户不可见
     
     /** 提交人 */
-    private String submitterName;
+    private String submitterName; // 普通用户不可见
     
     /** 审核人 */
-    private String reviewerName;
+    private String reviewerName; // 普通用户不可见
     
     /** 赛事 */
     private String eventName;
@@ -67,10 +67,10 @@ public class UserCertificateDetailVO {
     private String remark;
     
     /** 创建时间 */
-    private Instant createdAt;
+    private Instant createdAt; // 普通用户不可见
     
     /** 更新时间 */
-    private Instant updatedAt;
+    private Instant updatedAt; // 普通用户不可见
     
     /** 学生获得者列表 */
     private List<CertificateStudentVO> recipients;

@@ -52,6 +52,16 @@ public class Certificate {
 
   private String remark;
 
+  /**
+   * 驳回原因
+   */
+  private String rejectReason;
+
+  /**
+   * 最后审核时间
+   */
+  private LocalDateTime reviewedAt;
+
   private LocalDateTime createdAt;
 
   private LocalDateTime updatedAt;

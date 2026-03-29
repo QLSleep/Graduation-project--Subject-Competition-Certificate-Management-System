@@ -38,4 +38,9 @@ public class Result<T> {
     result.setMessage(message);
     return result;
   }
+
+  // 失败，自定义消息（默认500状态码）
+  public static <T> Result<T> error(String message) {
+    return error(ResultCode.BUSINESS_ERROR.getCode(), message);
+  }
 }

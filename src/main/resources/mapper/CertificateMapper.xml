@@ -3,8 +3,7 @@
 
 <mapper namespace="cn.guet.competition_cert_system.mapper.CertificateMapper">
 
-  <!-- UserCertificateDetailVO 结果集映射 -->
-  <!-- 注意：recipients 和 instructors 接收 String[]，由 Java 代码转换为 VO 列表 -->
+  <!-- UserCertificateDetailVO 结果集映射（详情用，完整字段） -->
   <resultMap id="UserCertificateDetailVOMap" type="cn.guet.competition_cert_system.vo.UserCertificateDetailVO">
     <id column="id" property="id" javaType="java.lang.Long"/>
     <result column="cert_type" property="certType" javaType="cn.guet.competition_cert_system.common.CertType"/>
@@ -15,9 +14,11 @@
     <result column="resource_key" property="resourceKey" javaType="java.lang.String"/>
     <result column="status" property="status" javaType="cn.guet.competition_cert_system.common.CertStatus"/>
     <result column="remark" property="remark" javaType="java.lang.String"/>
+    <result column="reject_reason" property="rejectReason" javaType="java.lang.String"/>
+    <result column="reviewed_at" property="reviewedAt" javaType="java.time.LocalDateTime"/>
     <result column="created_at" property="createdAt" javaType="java.time.LocalDateTime"/>
     <result column="updated_at" property="updatedAt" javaType="java.time.LocalDateTime"/>
-    <!-- 额外字段 -->
+    <!-- 关联字段 -->
     <result column="college_name" property="collegeName" javaType="java.lang.String"/>
     <result column="creator_name" property="creatorName" javaType="java.lang.String"/>
     <result column="submitter_name" property="submitterName" javaType="java.lang.String"/>
@@ -27,23 +28,46 @@
     <result column="group_name" property="groupName" javaType="java.lang.String"/>
     <result column="category_name" property="categoryName" javaType="java.lang.String"/>
     <result column="level" property="level" javaType="java.lang.String"/>
-    <!-- 聚合字段：PostgreSQL text[] -> Java String[] -->
+    <!-- 聚合字段 -->
     <result column="student_names" property="studentNames" javaType="[Ljava.lang.String;"/>
     <result column="student_ids" property="studentIds" javaType="[Ljava.lang.String;"/>
     <result column="teacher_names" property="teacherNames" javaType="[Ljava.lang.String;"/>
     <result column="teacher_ids" property="teacherIds" javaType="[Ljava.lang.String;"/>
   </resultMap>
 
-  <!-- 查询指定用户的证书列表及其详情（按证书聚合，避免笛卡尔积） -->
-  <select id="getUserCertificates" resultMap="UserCertificateDetailVOMap" parameterType="java.lang.Long">
+  <!-- CertificateSimpleVO 结果集映射（列表用，精简字段） -->
+  <resultMap id="CertificateSimpleVOMap" type="cn.guet.competition_cert_system.vo.CertificateSimpleVO">
+    <id column="id" property="id" javaType="java.lang.Long"/>
+    <result column="cert_type" property="certType" javaType="cn.guet.competition_cert_system.common.CertType"/>
+    <result column="cert_number" property="certNumber" javaType="java.lang.String"/>
+    <result column="cert_title" property="certTitle" javaType="java.lang.String"/>
+    <result column="award_level" property="awardLevel" javaType="java.lang.String"/>
+    <result column="issu_date" property="issuDate" javaType="java.time.LocalDate"/>
+    <result column="resource_key" property="resourceKey" javaType="java.lang.String"/>
+    <result column="status" property="status" javaType="cn.guet.competition_cert_system.common.CertStatus"/>
+    <result column="remark" property="remark" javaType="java.lang.String"/>
+    <result column="reject_reason" property="rejectReason" javaType="java.lang.String"/>
+    <!-- 关联字段 -->
+    <result column="college_name" property="collegeName" javaType="java.lang.String"/>
+    <result column="event_name" property="eventName" javaType="java.lang.String"/>
+    <result column="session_name" property="sessionName" javaType="java.lang.String"/>
+    <result column="group_name" property="groupName" javaType="java.lang.String"/>
+    <result column="category_name" property="categoryName" javaType="java.lang.String"/>
+    <result column="level" property="level" javaType="java.lang.String"/>
+    <!-- 聚合字段 -->
+    <result column="student_names" property="studentNames" javaType="[Ljava.lang.String;"/>
+    <result column="student_ids" property="studentIds" javaType="[Ljava.lang.String;"/>
+    <result column="teacher_names" property="teacherNames" javaType="[Ljava.lang.String;"/>
+    <result column="teacher_ids" property="teacherIds" javaType="[Ljava.lang.String;"/>
+  </resultMap>
+
+  <!-- 查询指定用户的证书列表（按证书聚合，精简字段，列表用） -->
+  <select id="getUserCertificates" resultMap="CertificateSimpleVOMap" parameterType="java.lang.Long">
     SELECT
       c.id,
       c.cert_type,
       c.cert_number,
       col.college_name,
-      creator.username as creator_name,
-      submitter.username as submitter_name,
-      reviewer.username as reviewer_name,
       ce.event_name,
       ce.level,
       cs.session_name,
@@ -55,8 +79,7 @@
       c.resource_key,
       c.status,
       c.remark,
-      c.created_at,
-      c.updated_at,
+      c.reject_reason,
       -- 学生聚合（子查询避免笛卡尔积）
       (SELECT COALESCE(ARRAY_AGG(u.real_name ORDER BY u.real_name), ARRAY[]::text[])
        FROM certificate_recipient cr2
@@ -77,9 +100,6 @@
        WHERE ci2.certificate_id = c.id) as teacher_ids
     FROM certificate c
     LEFT JOIN college col ON c.owner_college_id = col.id
-    LEFT JOIN sys_user creator ON c.created_by = creator.id
-    LEFT JOIN sys_user submitter ON c.submitter_user_id = submitter.id
-    LEFT JOIN sys_user reviewer ON c.reviewer_user_id = reviewer.id
     LEFT JOIN competition_event ce ON c.event_id = ce.id
     LEFT JOIN competition_session cs ON c.session_id = cs.id
     LEFT JOIN subject_group sg ON c.group_id = sg.id
@@ -92,16 +112,13 @@
     ORDER BY c.created_at DESC, c.id
   </select>
 
-  <!-- 查询指定教师指导的学生证书列表（限定 STUDENT 类型，按证书聚合） -->
-  <select id="getStudentCertificatesByTeacher" resultMap="UserCertificateDetailVOMap" parameterType="java.lang.Long">
+  <!-- 查询指定教师指导的学生证书列表（限定 STUDENT 类型，按证书聚合，精简字段） -->
+  <select id="getStudentCertificatesByTeacher" resultMap="CertificateSimpleVOMap" parameterType="java.lang.Long">
     SELECT
       c.id,
       c.cert_type,
       c.cert_number,
       col.college_name,
-      creator.username as creator_name,
-      submitter.username as submitter_name,
-      reviewer.username as reviewer_name,
       ce.event_name,
       ce.level,
       cs.session_name,
@@ -113,8 +130,7 @@
       c.resource_key,
       c.status,
       c.remark,
-      c.created_at,
-      c.updated_at,
+      c.reject_reason,
       -- 学生聚合
       (SELECT COALESCE(ARRAY_AGG(u.real_name ORDER BY u.real_name), ARRAY[]::text[])
        FROM certificate_recipient cr2
@@ -136,9 +152,6 @@
     FROM certificate c
     INNER JOIN certificate_instructor ci ON ci.certificate_id = c.id
     LEFT JOIN college col ON c.owner_college_id = col.id
-    LEFT JOIN sys_user creator ON c.created_by = creator.id
-    LEFT JOIN sys_user submitter ON c.submitter_user_id = submitter.id
-    LEFT JOIN sys_user reviewer ON c.reviewer_user_id = reviewer.id
     LEFT JOIN competition_event ce ON c.event_id = ce.id
     LEFT JOIN competition_session cs ON c.session_id = cs.id
     LEFT JOIN subject_group sg ON c.group_id = sg.id
@@ -169,6 +182,8 @@
       c.resource_key,
       c.status,
       c.remark,
+      c.reject_reason,
+      c.reviewed_at,
       c.created_at,
       c.updated_at,
       -- 学生聚合
@@ -201,17 +216,14 @@
     WHERE c.id = #{certId}
   </select>
 
-  <!-- 查询指定学院所有证书（UNION：学生证书聚合，教师证书不聚合） -->
-  <select id="getCollegeCertificates" resultMap="UserCertificateDetailVOMap" parameterType="java.lang.Long">
+  <!-- 查询指定学院所有证书（UNION：学生证书聚合，教师证书不聚合，精简字段） -->
+  <select id="getCollegeCertificates" resultMap="CertificateSimpleVOMap" parameterType="java.lang.Long">
     -- ===== STUDENT 证书：按 certificate 聚合 =====
     SELECT
       c.id,
       c.cert_type,
       c.cert_number,
       col.college_name,
-      creator.username as creator_name,
-      submitter.username as submitter_name,
-      reviewer.username as reviewer_name,
       ce.event_name,
       ce.level,
       cs.session_name,
@@ -223,8 +235,7 @@
       c.resource_key,
       c.status,
       c.remark,
-      c.created_at,
-      c.updated_at,
+      c.reject_reason,
       -- 学生聚合
       (SELECT COALESCE(ARRAY_AGG(u.real_name ORDER BY u.real_name), ARRAY[]::text[])
        FROM certificate_recipient cr2
@@ -245,9 +256,6 @@
        WHERE ci2.certificate_id = c.id) as teacher_ids
     FROM certificate c
     LEFT JOIN college col ON c.owner_college_id = col.id
-    LEFT JOIN sys_user creator ON c.created_by = creator.id
-    LEFT JOIN sys_user submitter ON c.submitter_user_id = submitter.id
-    LEFT JOIN sys_user reviewer ON c.reviewer_user_id = reviewer.id
     LEFT JOIN competition_event ce ON c.event_id = ce.id
     LEFT JOIN competition_session cs ON c.session_id = cs.id
     LEFT JOIN subject_group sg ON c.group_id = sg.id
@@ -263,9 +271,6 @@
       c.cert_type,
       c.cert_number,
       col.college_name,
-      creator.username as creator_name,
-      submitter.username as submitter_name,
-      reviewer.username as reviewer_name,
       ce.event_name,
       ce.level,
       cs.session_name,
@@ -277,8 +282,7 @@
       c.resource_key,
       c.status,
       c.remark,
-      c.created_at,
-      c.updated_at,
+      c.reject_reason,
       -- 学生：教师证书无获得者
       ARRAY[]::text[] as student_names,
       ARRAY[]::text[] as student_ids,
@@ -288,9 +292,6 @@
     FROM certificate_instructor ci
     INNER JOIN certificate c ON ci.certificate_id = c.id
     LEFT JOIN college col ON c.owner_college_id = col.id
-    LEFT JOIN sys_user creator ON c.created_by = creator.id
-    LEFT JOIN sys_user submitter ON c.submitter_user_id = submitter.id
-    LEFT JOIN sys_user reviewer ON c.reviewer_user_id = reviewer.id
     LEFT JOIN competition_event ce ON c.event_id = ce.id
     LEFT JOIN competition_session cs ON c.session_id = cs.id
     LEFT JOIN subject_group sg ON c.group_id = sg.id
@@ -299,6 +300,182 @@
     LEFT JOIN sys_user holder ON ci.instructor_user_id = holder.id
     WHERE c.owner_college_id = #{collegeId}
       AND c.cert_type = 'INSTRUCTOR'
+    ORDER BY created_at DESC, id
+  </select>
+
+  <!-- 查询所有证书（仅超管可访问，UNION：学生证书聚合，教师证书不聚合，精简字段） -->
+  <select id="getAllCertificates" resultMap="CertificateSimpleVOMap">
+    -- ===== STUDENT 证书：按 certificate 聚合 =====
+    SELECT
+      c.id,
+      c.cert_type,
+      c.cert_number,
+      col.college_name,
+      ce.event_name,
+      ce.level,
+      cs.session_name,
+      sg.group_name,
+      cc.category_name,
+      c.cert_title,
+      c.award_level,
+      c.issu_date,
+      c.resource_key,
+      c.status,
+      c.remark,
+      c.reject_reason,
+      -- 学生聚合
+      (SELECT COALESCE(ARRAY_AGG(u.real_name ORDER BY u.real_name), ARRAY[]::text[])
+       FROM certificate_recipient cr2
+       JOIN sys_user u ON cr2.recipient_user_id = u.id
+       WHERE cr2.certificate_id = c.id) as student_names,
+      (SELECT COALESCE(ARRAY_AGG(u.student_id ORDER BY u.student_id), ARRAY[]::text[])
+       FROM certificate_recipient cr2
+       JOIN sys_user u ON cr2.recipient_user_id = u.id
+       WHERE cr2.certificate_id = c.id) as student_ids,
+      -- 教师聚合
+      (SELECT COALESCE(ARRAY_AGG(u.real_name ORDER BY u.real_name), ARRAY[]::text[])
+       FROM certificate_instructor ci2
+       JOIN sys_user u ON ci2.instructor_user_id = u.id
+       WHERE ci2.certificate_id = c.id) as teacher_names,
+      (SELECT COALESCE(ARRAY_AGG(u.teacher_id ORDER BY u.teacher_id), ARRAY[]::text[])
+       FROM certificate_instructor ci2
+       JOIN sys_user u ON ci2.instructor_user_id = u.id
+       WHERE ci2.certificate_id = c.id) as teacher_ids
+    FROM certificate c
+    LEFT JOIN college col ON c.owner_college_id = col.id
+    LEFT JOIN competition_event ce ON c.event_id = ce.id
+    LEFT JOIN competition_session cs ON c.session_id = cs.id
+    LEFT JOIN subject_group sg ON c.group_id = sg.id
+    LEFT JOIN competition_category cc ON c.category_id = cc.id
+    WHERE c.cert_type = 'STUDENT'
+
+    UNION ALL
+
+    -- ===== INSTRUCTOR 证书：不聚合，每个教师单独一行 =====
+    SELECT
+      c.id,
+      c.cert_type,
+      c.cert_number,
+      col.college_name,
+      ce.event_name,
+      ce.level,
+      cs.session_name,
+      sg.group_name,
+      cc.category_name,
+      c.cert_title,
+      c.award_level,
+      c.issu_date,
+      c.resource_key,
+      c.status,
+      c.remark,
+      c.reject_reason,
+      -- 学生：教师证书无获得者
+      ARRAY[]::text[] as student_names,
+      ARRAY[]::text[] as student_ids,
+      -- 教师：当前记录关联的教师本人
+      ARRAY[holder.real_name]::text[] as teacher_names,
+      ARRAY[holder.teacher_id]::text[] as teacher_ids
+    FROM certificate_instructor ci
+    INNER JOIN certificate c ON ci.certificate_id = c.id
+    LEFT JOIN college col ON c.owner_college_id = col.id
+    LEFT JOIN competition_event ce ON c.event_id = ce.id
+    LEFT JOIN competition_session cs ON c.session_id = cs.id
+    LEFT JOIN subject_group sg ON c.group_id = sg.id
+    LEFT JOIN competition_category cc ON c.category_id = cc.id
+    LEFT JOIN sys_user holder ON ci.instructor_user_id = holder.id
+    WHERE c.cert_type = 'INSTRUCTOR'
+    ORDER BY created_at DESC, id
+  </select>
+
+  <!-- 查询待审核证书列表（UNION：学生证书聚合，教师证书不聚合，精简字段） -->
+  <select id="getPendingReviewCertificates" resultMap="CertificateSimpleVOMap" parameterType="java.lang.Long">
+    -- ===== STUDENT 证书：按 certificate 聚合 =====
+    SELECT
+      c.id,
+      c.cert_type,
+      c.cert_number,
+      col.college_name,
+      ce.event_name,
+      ce.level,
+      cs.session_name,
+      sg.group_name,
+      cc.category_name,
+      c.cert_title,
+      c.award_level,
+      c.issu_date,
+      c.resource_key,
+      c.status,
+      c.remark,
+      c.reject_reason,
+      -- 学生聚合
+      (SELECT COALESCE(ARRAY_AGG(u.real_name ORDER BY u.real_name), ARRAY[]::text[])
+       FROM certificate_recipient cr2
+       JOIN sys_user u ON cr2.recipient_user_id = u.id
+       WHERE cr2.certificate_id = c.id) as student_names,
+      (SELECT COALESCE(ARRAY_AGG(u.student_id ORDER BY u.student_id), ARRAY[]::text[])
+       FROM certificate_recipient cr2
+       JOIN sys_user u ON cr2.recipient_user_id = u.id
+       WHERE cr2.certificate_id = c.id) as student_ids,
+      -- 教师聚合（学生证书可能有多教师）
+      (SELECT COALESCE(ARRAY_AGG(u.real_name ORDER BY u.real_name), ARRAY[]::text[])
+       FROM certificate_instructor ci2
+       JOIN sys_user u ON ci2.instructor_user_id = u.id
+       WHERE ci2.certificate_id = c.id) as teacher_names,
+      (SELECT COALESCE(ARRAY_AGG(u.teacher_id ORDER BY u.teacher_id), ARRAY[]::text[])
+       FROM certificate_instructor ci2
+       JOIN sys_user u ON ci2.instructor_user_id = u.id
+       WHERE ci2.certificate_id = c.id) as teacher_ids
+    FROM certificate c
+    LEFT JOIN college col ON c.owner_college_id = col.id
+    LEFT JOIN competition_event ce ON c.event_id = ce.id
+    LEFT JOIN competition_session cs ON c.session_id = cs.id
+    LEFT JOIN subject_group sg ON c.group_id = sg.id
+    LEFT JOIN competition_category cc ON c.category_id = cc.id
+    WHERE c.cert_type = 'STUDENT'
+      AND c.status = 'PENDING_REVIEW'
+      <if test="collegeId != null">
+        AND c.owner_college_id = #{collegeId}
+      </if>
+
+    UNION ALL
+
+    -- ===== INSTRUCTOR 证书：不聚合，每个教师单独一行 =====
+    SELECT
+      c.id,
+      c.cert_type,
+      c.cert_number,
+      col.college_name,
+      ce.event_name,
+      ce.level,
+      cs.session_name,
+      sg.group_name,
+      cc.category_name,
+      c.cert_title,
+      c.award_level,
+      c.issu_date,
+      c.resource_key,
+      c.status,
+      c.remark,
+      c.reject_reason,
+      -- 学生：教师证书无获得者
+      ARRAY[]::text[] as student_names,
+      ARRAY[]::text[] as student_ids,
+      -- 教师：当前记录关联的教师本人
+      ARRAY[holder.real_name]::text[] as teacher_names,
+      ARRAY[holder.teacher_id]::text[] as teacher_ids
+    FROM certificate_instructor ci
+    INNER JOIN certificate c ON ci.certificate_id = c.id
+    LEFT JOIN college col ON c.owner_college_id = col.id
+    LEFT JOIN competition_event ce ON c.event_id = ce.id
+    LEFT JOIN competition_session cs ON c.session_id = cs.id
+    LEFT JOIN subject_group sg ON c.group_id = sg.id
+    LEFT JOIN competition_category cc ON c.category_id = cc.id
+    LEFT JOIN sys_user holder ON ci.instructor_user_id = holder.id
+    WHERE c.cert_type = 'INSTRUCTOR'
+      AND c.status = 'PENDING_REVIEW'
+      <if test="collegeId != null">
+        AND c.owner_college_id = #{collegeId}
+      </if>
     ORDER BY created_at DESC, id
   </select>
 </mapper>

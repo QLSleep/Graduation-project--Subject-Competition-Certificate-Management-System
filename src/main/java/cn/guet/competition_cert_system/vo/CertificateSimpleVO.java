@@ -58,8 +58,11 @@ public class CertificateSimpleVO {
     /** 状态 */
     private CertStatus status;
 
-    /** 备注 */
+    /** 备注（列表展示，查看审核反馈） */
     private String remark;
+
+    /** 驳回原因（列表展示，查看驳回原因） */
+    private String rejectReason;
 
     // ========== 以下为内部字段 ==========
 

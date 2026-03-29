@@ -1,5 +1,51 @@
 package cn.guet.competition_cert_system.service;
 
+/**
+ * 认证服务接口
+ */
 public interface AuthService {
 
+    /**
+     * 登录
+     * @param username 用户名
+     * @param password 密码
+     * @return 包含 accessToken 和 refreshToken
+     */
+    LoginResult login(String username, String password);
+
+    /**
+     * 刷新 AccessToken
+     * @param refreshToken refreshToken
+     * @return 新的 accessToken（如果 refreshToken 有效）
+     */
+    String refreshAccessToken(String refreshToken);
+
+    /**
+     * 登出
+     * @param userId 用户ID
+     */
+    void logout(Long userId);
+
+    // ==================== 内部类 ====================
+
+    /**
+     * 登录结果
+     */
+    class LoginResult {
+        private String accessToken;
+        private String refreshToken;
+
+        public LoginResult(String accessToken, String refreshToken) {
+            this.accessToken = accessToken;
+            this.refreshToken = refreshToken;
+        }
+
+        public String getAccessToken() {
+            return accessToken;
+        }
+
+        public String getRefreshToken() {
+            return refreshToken;
+        }
+    }
 }

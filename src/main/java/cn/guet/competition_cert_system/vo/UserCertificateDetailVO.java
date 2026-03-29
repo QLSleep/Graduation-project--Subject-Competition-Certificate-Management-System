@@ -5,7 +5,6 @@ import cn.guet.competition_cert_system.common.CertType;
 import java.time.LocalDateTime;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -72,10 +71,16 @@ public class UserCertificateDetailVO {
     /** 备注 */
     private String remark;
 
-    /** 创建时间 */
+    /** 驳回原因 */
+    private String rejectReason;
+
+    /** 最后审核时间 */
+    private LocalDateTime reviewedAt;
+
+    /** 创建时间（仅详情展示） */
     private LocalDateTime createdAt;
 
-    /** 更新时间 */
+    /** 更新时间（仅详情展示） */
     private LocalDateTime updatedAt;
 
     // ========== 以下为内部字段，由 SQL 的 ARRAY_AGG 填充 ==========

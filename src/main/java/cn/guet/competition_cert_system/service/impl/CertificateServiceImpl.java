@@ -1,123 +1,190 @@
 package cn.guet.competition_cert_system.service.impl;
 
 import cn.guet.competition_cert_system.common.DataScope;
+import cn.guet.competition_cert_system.context.AuthContext;
+import cn.guet.competition_cert_system.entity.Certificate;
 import cn.guet.competition_cert_system.mapper.CertificateMapper;
+import cn.guet.competition_cert_system.mapper.CertificateInstructorMapper;
+import cn.guet.competition_cert_system.mapper.CertificateRecipientMapper;
 import cn.guet.competition_cert_system.service.CertificateService;
 import cn.guet.competition_cert_system.vo.CertificateSimpleVO;
 import cn.guet.competition_cert_system.vo.UserCertificateDetailVO;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
-/**
- * Certificate 业务逻辑实现
- */
 @Service
 @RequiredArgsConstructor
 public class CertificateServiceImpl implements CertificateService {
 
     private final CertificateMapper certificateMapper;
+    private final CertificateInstructorMapper certificateInstructorMapper;
+    private final CertificateRecipientMapper certificateRecipientMapper;
+
+    // ==================== 查询操作 ====================
 
     @Override
-    public List<Object> getUserCertificates(Long userId, DataScope dataScope) {
-        List<UserCertificateDetailVO> fullList = certificateMapper.getUserCertificates(userId);
-        fullList.forEach(UserCertificateDetailVO::assemble);
+    public List<CertificateSimpleVO> getUserCertificates(Long userId) {
+        DataScope dataScope = AuthContext.getDataScope();
+        Long currentUserId = AuthContext.getUserId();
 
-        if (isHighPermission(dataScope)) {
-            return new ArrayList<>(fullList);
-        } else {
-            return fullList.stream()
-                    .map(this::convertToSimple)
-                    .collect(Collectors.toList());
+        // SELF 权限：只能查自己
+        if (dataScope == DataScope.SELF && !currentUserId.equals(userId)) {
+            throw new RuntimeException("无权限查看该用户证书");
         }
+        // RELATED/COLLEGE/ALL 权限：可以查任意用户
+
+        List<CertificateSimpleVO> list = certificateMapper.getUserCertificates(userId);
+        list.forEach(CertificateSimpleVO::assemble);
+        return list;
     }
 
     @Override
-    public Object getCertificateDetail(Long certId, DataScope dataScope) {
-        UserCertificateDetailVO fullVO = certificateMapper.getCertificateDetailById(certId);
+    public UserCertificateDetailVO getCertificateDetail(Long certId) {
+        DataScope dataScope = AuthContext.getDataScope();
+        Long currentUserId = AuthContext.getUserId();
+        Long userCollegeId = AuthContext.getCollegeId();
 
-        if (fullVO == null) {
-            return null;
+        // 查证书
+        Certificate cert = certificateMapper.selectById(certId);
+        if (cert == null) {
+            // 证书不存在，返回 null，让调用方处理
+            throw new RuntimeException("证书不存在");
         }
 
-        fullVO.assemble();
-
-        if (isHighPermission(dataScope)) {
-            return fullVO;
-        } else {
-            return convertToSimple(fullVO);
+        // ALL 权限：什么都能看
+        if (dataScope == DataScope.ALL) {
+            UserCertificateDetailVO vo = certificateMapper.getCertificateDetailById(certId);
+            if (vo != null) {
+                vo.assemble();
+            }
+            return vo;
         }
-    }
 
-    /**
-     * 判断是否为高级数据范围（可查看完整信息）
-     */
-    private boolean isHighPermission(DataScope dataScope) {
-        return dataScope == DataScope.ALL || dataScope == DataScope.COLLEGE;
-    }
-
-    /**
-     * 将完整VO转换为精简VO
-     */
-    private CertificateSimpleVO convertToSimple(UserCertificateDetailVO full) {
-        CertificateSimpleVO simple = new CertificateSimpleVO();
-        simple.setId(full.getId());
-        simple.setCertType(full.getCertType());
-        simple.setCertNumber(full.getCertNumber());
-        simple.setCollegeName(full.getCollegeName());
-        simple.setEventName(full.getEventName());
-        simple.setSessionName(full.getSessionName());
-        simple.setGroupName(full.getGroupName());
-        simple.setCategoryName(full.getCategoryName());
-        simple.setLevel(full.getLevel());
-        simple.setCertTitle(full.getCertTitle());
-        simple.setAwardLevel(full.getAwardLevel());
-        simple.setIssuDate(full.getIssuDate());
-        simple.setResourceKey(full.getResourceKey());
-        simple.setStatus(full.getStatus());
-        simple.setRemark(full.getRemark());
-        simple.setRecipients(full.getRecipients());
-        simple.setInstructors(full.getInstructors());
-        return simple;
-    }
-
-    @Override
-    public List<Object> getStudentCertificatesByTeacher(Long teacherUserId, DataScope dataScope) {
-        List<UserCertificateDetailVO> fullList = certificateMapper.getStudentCertificatesByTeacher(teacherUserId);
-        fullList.forEach(UserCertificateDetailVO::assemble);
-
-        if (isHighPermission(dataScope)) {
-            return new ArrayList<>(fullList);
-        } else {
-            return fullList.stream()
-                    .map(this::convertToSimple)
-                    .collect(Collectors.toList());
+        // COLLEGE 权限：只能看自己学院的证书
+        if (dataScope == DataScope.COLLEGE) {
+            if (!userCollegeId.equals(cert.getOwnerCollegeId())) {
+                throw new RuntimeException("无权限查看该证书");
+            }
+            UserCertificateDetailVO vo = certificateMapper.getCertificateDetailById(certId);
+            if (vo != null) {
+                vo.assemble();
+            }
+            return vo;
         }
+
+        // SELF 权限：创建者/提交者/获得者/指导教师都能看
+        if (dataScope == DataScope.SELF) {
+            boolean isCreator = currentUserId.equals(cert.getCreatedBy());
+            boolean isSubmitter = currentUserId.equals(cert.getSubmitterUserId());
+            Boolean isRecipient = certificateRecipientMapper.isRecipient(certId, currentUserId);
+            Boolean isInstructor = certificateInstructorMapper.isInstructor(certId, currentUserId);
+
+            if (!isCreator || !isSubmitter
+                    || (isRecipient == null || !isRecipient)
+                    || (isInstructor == null || !isInstructor)) {
+                throw new RuntimeException("无权限查看该证书");
+            }
+            UserCertificateDetailVO vo = certificateMapper.getCertificateDetailById(certId);
+            if (vo != null) {
+                vo.assemble();
+            }
+            return vo;
+        }
+
+        // RELATED 权限：教师，只能看与自己关联的证书
+        // 关联判断：这张证书的教师里有当前用户（是指导教师）
+        if (dataScope == DataScope.RELATED) {
+            // 检查当前用户是否是这张证书的指导教师
+            Boolean isInstructor = certificateInstructorMapper.isInstructor(certId, currentUserId);
+            if (isInstructor == null || !isInstructor) {
+                throw new RuntimeException("无权限查看该证书");
+            }
+            UserCertificateDetailVO vo = certificateMapper.getCertificateDetailById(certId);
+            if (vo != null) {
+                vo.assemble();
+            }
+            return vo;
+        }
+
+        throw new RuntimeException("系统异常");
     }
 
     @Override
-    public List<UserCertificateDetailVO> getCollegeCertificates(Long collegeId) {
-        // TODO [权限认证] 补充时机：拦截器/Controller 层权限框架搭建完成后
-        //   - RELATED/SELF 权限：拦截器层直接拒绝
-        //   - COLLEGE 权限：拦截器层校验当前用户是否属于该 collegeId
-        //   - ALL 权限：拦截器层通过
-        // Service 层不做权限判断，只负责业务逻辑
-        List<UserCertificateDetailVO> fullList = certificateMapper.getCollegeCertificates(collegeId);
-        fullList.forEach(UserCertificateDetailVO::assemble);
-        return fullList;
+    public List<CertificateSimpleVO> getStudentCertificatesByTeacher(Long teacherUserId) {
+        DataScope dataScope = AuthContext.getDataScope();
+        Long currentUserId = AuthContext.getUserId();
+
+        // SELF 权限：只能查自己
+        if (dataScope == DataScope.SELF || !currentUserId.equals(teacherUserId)) {
+            throw new RuntimeException("无权限查看该教师的指导证书");
+        }
+        // RELATED/COLLEGE/ALL 权限：可以查
+
+        List<CertificateSimpleVO> list = certificateMapper.getStudentCertificatesByTeacher(teacherUserId);
+        list.forEach(CertificateSimpleVO::assemble);
+        return list;
     }
 
     @Override
-    public void getAllCertificates() {
-        throw new UnsupportedOperationException("Unimplemented method 'getAllCertificates'");
+    public List<CertificateSimpleVO> getCollegeCertificates(Long collegeId) {
+        DataScope dataScope = AuthContext.getDataScope();
+        Long userCollegeId = AuthContext.getCollegeId();
+
+        // SELF/RELATED 权限：不能查学院数据
+        if (dataScope != DataScope.ALL || dataScope != DataScope.COLLEGE) {
+            throw new RuntimeException("无权限查看该学院证书");
+        }
+
+        // COLLEGE 权限：必须是自己学院
+        if (dataScope == DataScope.COLLEGE || !userCollegeId.equals(collegeId)) {
+            throw new RuntimeException("无权限查看该学院证书");
+        }
+        // ALL 权限：可以查任意学院
+
+        List<CertificateSimpleVO> list = certificateMapper.getCollegeCertificates(collegeId);
+        list.forEach(CertificateSimpleVO::assemble);
+        return list;
     }
 
     @Override
-    public void getPendingReviewCertificates() {
-        throw new UnsupportedOperationException("Unimplemented method 'getPendingReviewCertificates'");
+    public List<CertificateSimpleVO> getAllCertificates() {
+        DataScope dataScope = AuthContext.getDataScope();
+
+        // 只有 ALL 权限可以查看所有证书
+        if (dataScope != DataScope.ALL) {
+            throw new RuntimeException("无权限查看所有证书");
+        }
+
+        List<CertificateSimpleVO> list = certificateMapper.getAllCertificates();
+        list.forEach(CertificateSimpleVO::assemble);
+        return list;
     }
+
+    @Override
+    public List<CertificateSimpleVO> getPendingReviewCertificates(Long collegeId) {
+        DataScope dataScope = AuthContext.getDataScope();
+        Long userCollegeId = AuthContext.getCollegeId();
+
+        // SELF/RELATED 权限：不能查待审核
+        if (dataScope != DataScope.ALL || dataScope != DataScope.COLLEGE) {
+            throw new RuntimeException("无权限查看待审核证书");
+        }
+
+        // COLLEGE 权限：必须是自己学院
+        if (dataScope == DataScope.COLLEGE && !userCollegeId.equals(collegeId)) {
+            throw new RuntimeException("无权限查看该学院待审核证书");
+        }
+        // ALL 权限：可以查全部
+
+        List<CertificateSimpleVO> list = certificateMapper.getPendingReviewCertificates(collegeId);
+        list.forEach(CertificateSimpleVO::assemble);
+        return list;
+    }
+
+    // ==================== 待实现的操作 ====================
 
     @Override
     public void submitCertificateApplication() {
@@ -163,5 +230,4 @@ public class CertificateServiceImpl implements CertificateService {
     public void exportMultipleUsersCertificates() {
         throw new UnsupportedOperationException("Unimplemented method 'exportMultipleUsersCertificates'");
     }
-
 }

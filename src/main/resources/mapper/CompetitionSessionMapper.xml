@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.guet.competition_cert_system.mapper.CompetitionSessionMapper">
+
+  <resultMap id="SessionWithEventMap" type="cn.guet.competition_cert_system.vo.CompetitionSessionSimpleVO">
+    <id column="id" property="id"/>
+    <result column="session_name" property="sessionName"/>
+    <result column="year" property="year"/>
+    <result column="event_id" property="eventId"/>
+    <result column="event_name" property="eventName"/>
+  </resultMap>
+
+  <select id="selectSessionList" resultMap="SessionWithEventMap">
+    SELECT cs.id, cs.session_name, cs.year, cs.event_id, ce.event_name
+    FROM competition_session cs
+    LEFT JOIN competition_event ce ON cs.event_id = ce.id
+    ORDER BY cs.year DESC, cs.id DESC
+  </select>
+
+</mapper>

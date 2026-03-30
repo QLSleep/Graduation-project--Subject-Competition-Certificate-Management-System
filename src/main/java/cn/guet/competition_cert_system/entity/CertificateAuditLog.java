@@ -2,6 +2,7 @@ package cn.guet.competition_cert_system.entity;
 
 import java.time.LocalDateTime;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 
@@ -18,7 +19,7 @@ import lombok.NoArgsConstructor;
 @TableName("certificate_audit_log")
 public class CertificateAuditLog {
 
-    @TableId
+    @TableId(type = IdType.AUTO)
     private Long id;
 
     /** 证书ID */

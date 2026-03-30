@@ -10,7 +10,7 @@
     <result column="cert_number" property="certNumber" javaType="java.lang.String"/>
     <result column="cert_title" property="certTitle" javaType="java.lang.String"/>
     <result column="award_level" property="awardLevel" javaType="java.lang.String"/>
-    <result column="issu_date" property="issuDate" javaType="java.time.LocalDate"/>
+    <result column="issu_date" property="issueDate" javaType="java.time.LocalDate"/>
     <result column="resource_key" property="resourceKey" javaType="java.lang.String"/>
     <result column="status" property="status" javaType="cn.guet.competition_cert_system.common.CertStatus"/>
     <result column="remark" property="remark" javaType="java.lang.String"/>
@@ -42,7 +42,7 @@
     <result column="cert_number" property="certNumber" javaType="java.lang.String"/>
     <result column="cert_title" property="certTitle" javaType="java.lang.String"/>
     <result column="award_level" property="awardLevel" javaType="java.lang.String"/>
-    <result column="issu_date" property="issuDate" javaType="java.time.LocalDate"/>
+    <result column="issu_date" property="issueDate" javaType="java.time.LocalDate"/>
     <result column="resource_key" property="resourceKey" javaType="java.lang.String"/>
     <result column="status" property="status" javaType="cn.guet.competition_cert_system.common.CertStatus"/>
     <result column="remark" property="remark" javaType="java.lang.String"/>
@@ -83,21 +83,21 @@
       -- 学生聚合（子查询避免笛卡尔积）
       (SELECT COALESCE(ARRAY_AGG(u.real_name ORDER BY u.real_name), ARRAY[]::text[])
        FROM certificate_recipient cr2
-       JOIN sys_user u ON cr2.recipient_user_id = u.id
+       JOIN sys_user u ON cr2.user_id = u.id
        WHERE cr2.certificate_id = c.id) as student_names,
       (SELECT COALESCE(ARRAY_AGG(u.student_id ORDER BY u.student_id), ARRAY[]::text[])
        FROM certificate_recipient cr2
-       JOIN sys_user u ON cr2.recipient_user_id = u.id
+       JOIN sys_user u ON cr2.user_id = u.id
        WHERE cr2.certificate_id = c.id) as student_ids,
-      -- 教师聚合（子查询避免笛卡尔积）
-      (SELECT COALESCE(ARRAY_AGG(u.real_name ORDER BY u.real_name), ARRAY[]::text[])
-       FROM certificate_instructor ci2
-       JOIN sys_user u ON ci2.instructor_user_id = u.id
-       WHERE ci2.certificate_id = c.id) as teacher_names,
-      (SELECT COALESCE(ARRAY_AGG(u.teacher_id ORDER BY u.teacher_id), ARRAY[]::text[])
-       FROM certificate_instructor ci2
-       JOIN sys_user u ON ci2.instructor_user_id = u.id
-       WHERE ci2.certificate_id = c.id) as teacher_ids
+      -- 教师聚合（从certificate_recipient.instructor_id获取，去重）
+      (SELECT COALESCE(ARRAY_AGG(DISTINCT u.real_name ORDER BY u.real_name), ARRAY[]::text[])
+       FROM certificate_recipient cr2
+       JOIN sys_user u ON cr2.instructor_id = u.id
+       WHERE cr2.certificate_id = c.id) as teacher_names,
+      (SELECT COALESCE(ARRAY_AGG(DISTINCT u.teacher_id ORDER BY u.teacher_id), ARRAY[]::text[])
+       FROM certificate_recipient cr2
+       JOIN sys_user u ON cr2.instructor_id = u.id
+       WHERE cr2.certificate_id = c.id) as teacher_ids
     FROM certificate c
     LEFT JOIN college col ON c.owner_college_id = col.id
     LEFT JOIN competition_event ce ON c.event_id = ce.id
@@ -105,10 +105,14 @@
     LEFT JOIN subject_group sg ON c.group_id = sg.id
     LEFT JOIN competition_category cc ON c.category_id = cc.id
     WHERE
-      c.submitter_user_id = #{userId}
-      OR c.created_by = #{userId}
-      OR EXISTS (SELECT 1 FROM certificate_recipient cr WHERE cr.certificate_id = c.id AND cr.recipient_user_id = #{userId})
-      OR EXISTS (SELECT 1 FROM certificate_instructor ci WHERE ci.certificate_id = c.id AND ci.instructor_user_id = #{userId})
+      (c.cert_type = 'STUDENT' AND EXISTS (
+        SELECT 1 FROM certificate_recipient cr
+        WHERE cr.certificate_id = c.id AND (cr.user_id = #{userId} OR cr.instructor_id = #{userId})
+      ))
+      OR (c.cert_type = 'INSTRUCTOR' AND EXISTS (
+        SELECT 1 FROM certificate_instructor ci
+        WHERE ci.certificate_id = c.id AND ci.user_id = #{userId}
+      ))
     ORDER BY c.created_at DESC, c.id
   </select>
 
@@ -126,7 +130,7 @@
       cc.category_name,
       c.cert_title,
       c.award_level,
-      c.issu_date,
+      c.issue_date,
       c.resource_key,
       c.status,
       c.remark,
@@ -134,29 +138,29 @@
       -- 学生聚合
       (SELECT COALESCE(ARRAY_AGG(u.real_name ORDER BY u.real_name), ARRAY[]::text[])
        FROM certificate_recipient cr2
-       JOIN sys_user u ON cr2.recipient_user_id = u.id
+       JOIN sys_user u ON cr2.user_id = u.id
        WHERE cr2.certificate_id = c.id) as student_names,
       (SELECT COALESCE(ARRAY_AGG(u.student_id ORDER BY u.student_id), ARRAY[]::text[])
        FROM certificate_recipient cr2
-       JOIN sys_user u ON cr2.recipient_user_id = u.id
+       JOIN sys_user u ON cr2.user_id = u.id
        WHERE cr2.certificate_id = c.id) as student_ids,
-      -- 教师聚合
-      (SELECT COALESCE(ARRAY_AGG(u.real_name ORDER BY u.real_name), ARRAY[]::text[])
-       FROM certificate_instructor ci2
-       JOIN sys_user u ON ci2.instructor_user_id = u.id
-       WHERE ci2.certificate_id = c.id) as teacher_names,
-      (SELECT COALESCE(ARRAY_AGG(u.teacher_id ORDER BY u.teacher_id), ARRAY[]::text[])
-       FROM certificate_instructor ci2
-       JOIN sys_user u ON ci2.instructor_user_id = u.id
-       WHERE ci2.certificate_id = c.id) as teacher_ids
+      -- 教师聚合（从certificate_recipient.instructor_id获取，去重）
+      (SELECT COALESCE(ARRAY_AGG(DISTINCT u.real_name ORDER BY u.real_name), ARRAY[]::text[])
+       FROM certificate_recipient cr2
+       JOIN sys_user u ON cr2.instructor_id = u.id
+       WHERE cr2.certificate_id = c.id) as teacher_names,
+      (SELECT COALESCE(ARRAY_AGG(DISTINCT u.teacher_id ORDER BY u.teacher_id), ARRAY[]::text[])
+       FROM certificate_recipient cr2
+       JOIN sys_user u ON cr2.instructor_id = u.id
+       WHERE cr2.certificate_id = c.id) as teacher_ids
     FROM certificate c
-    INNER JOIN certificate_instructor ci ON ci.certificate_id = c.id
+    INNER JOIN certificate_recipient cr ON cr.certificate_id = c.id
     LEFT JOIN college col ON c.owner_college_id = col.id
     LEFT JOIN competition_event ce ON c.event_id = ce.id
     LEFT JOIN competition_session cs ON c.session_id = cs.id
     LEFT JOIN subject_group sg ON c.group_id = sg.id
     LEFT JOIN competition_category cc ON c.category_id = cc.id
-    WHERE ci.instructor_user_id = #{teacherUserId}
+    WHERE cr.instructor_id = #{teacherUserId}
       AND c.cert_type = 'STUDENT'
     ORDER BY c.created_at DESC, c.id
   </select>
@@ -178,7 +182,7 @@
       cc.category_name,
       c.cert_title,
       c.award_level,
-      c.issu_date,
+      c.issue_date,
       c.resource_key,
       c.status,
       c.remark,
@@ -186,24 +190,38 @@
       c.reviewed_at,
       c.created_at,
       c.updated_at,
-      -- 学生聚合
-      (SELECT COALESCE(ARRAY_AGG(u.real_name ORDER BY u.real_name), ARRAY[]::text[])
-       FROM certificate_recipient cr2
-       JOIN sys_user u ON cr2.recipient_user_id = u.id
-       WHERE cr2.certificate_id = c.id) as student_names,
-      (SELECT COALESCE(ARRAY_AGG(u.student_id ORDER BY u.student_id), ARRAY[]::text[])
-       FROM certificate_recipient cr2
-       JOIN sys_user u ON cr2.recipient_user_id = u.id
-       WHERE cr2.certificate_id = c.id) as student_ids,
-      -- 教师聚合
-      (SELECT COALESCE(ARRAY_AGG(u.real_name ORDER BY u.real_name), ARRAY[]::text[])
-       FROM certificate_instructor ci2
-       JOIN sys_user u ON ci2.instructor_user_id = u.id
-       WHERE ci2.certificate_id = c.id) as teacher_names,
-      (SELECT COALESCE(ARRAY_AGG(u.teacher_id ORDER BY u.teacher_id), ARRAY[]::text[])
-       FROM certificate_instructor ci2
-       JOIN sys_user u ON ci2.instructor_user_id = u.id
-       WHERE ci2.certificate_id = c.id) as teacher_ids
+      -- 学生聚合（只有STUDENT类型有）
+      CASE WHEN c.cert_type = 'STUDENT'
+        THEN (SELECT COALESCE(ARRAY_AGG(u.real_name ORDER BY u.real_name), ARRAY[]::text[])
+             FROM certificate_recipient cr2
+             JOIN sys_user u ON cr2.user_id = u.id
+             WHERE cr2.certificate_id = c.id)
+        ELSE ARRAY[]::text[] END as student_names,
+      CASE WHEN c.cert_type = 'STUDENT'
+        THEN (SELECT COALESCE(ARRAY_AGG(u.student_id ORDER BY u.student_id), ARRAY[]::text[])
+             FROM certificate_recipient cr2
+             JOIN sys_user u ON cr2.user_id = u.id
+             WHERE cr2.certificate_id = c.id)
+        ELSE ARRAY[]::text[] END as student_ids,
+      -- 教师聚合（STUDENT从instructor_id，INSTRUCTOR从certificate_instructor）
+      CASE WHEN c.cert_type = 'STUDENT'
+        THEN (SELECT COALESCE(ARRAY_AGG(DISTINCT u.real_name ORDER BY u.real_name), ARRAY[]::text[])
+             FROM certificate_recipient cr2
+             JOIN sys_user u ON cr2.instructor_id = u.id
+             WHERE cr2.certificate_id = c.id)
+        ELSE (SELECT COALESCE(ARRAY_AGG(u.real_name ORDER BY u.real_name), ARRAY[]::text[])
+              FROM certificate_instructor ci2
+              JOIN sys_user u ON ci2.user_id = u.id
+              WHERE ci2.certificate_id = c.id) END as teacher_names,
+      CASE WHEN c.cert_type = 'STUDENT'
+        THEN (SELECT COALESCE(ARRAY_AGG(DISTINCT u.teacher_id ORDER BY u.teacher_id), ARRAY[]::text[])
+             FROM certificate_recipient cr2
+             JOIN sys_user u ON cr2.instructor_id = u.id
+             WHERE cr2.certificate_id = c.id)
+        ELSE (SELECT COALESCE(ARRAY_AGG(u.teacher_id ORDER BY u.teacher_id), ARRAY[]::text[])
+              FROM certificate_instructor ci2
+              JOIN sys_user u ON ci2.user_id = u.id
+              WHERE ci2.certificate_id = c.id) END as teacher_ids
     FROM certificate c
     LEFT JOIN college col ON c.owner_college_id = col.id
     LEFT JOIN sys_user creator ON c.created_by = creator.id
@@ -231,7 +249,7 @@
       cc.category_name,
       c.cert_title,
       c.award_level,
-      c.issu_date,
+      c.issue_date,
       c.resource_key,
       c.status,
       c.remark,
@@ -239,21 +257,21 @@
       -- 学生聚合
       (SELECT COALESCE(ARRAY_AGG(u.real_name ORDER BY u.real_name), ARRAY[]::text[])
        FROM certificate_recipient cr2
-       JOIN sys_user u ON cr2.recipient_user_id = u.id
+       JOIN sys_user u ON cr2.user_id = u.id
        WHERE cr2.certificate_id = c.id) as student_names,
       (SELECT COALESCE(ARRAY_AGG(u.student_id ORDER BY u.student_id), ARRAY[]::text[])
        FROM certificate_recipient cr2
-       JOIN sys_user u ON cr2.recipient_user_id = u.id
+       JOIN sys_user u ON cr2.user_id = u.id
        WHERE cr2.certificate_id = c.id) as student_ids,
-      -- 教师聚合（学生证书可能有多教师）
-      (SELECT COALESCE(ARRAY_AGG(u.real_name ORDER BY u.real_name), ARRAY[]::text[])
-       FROM certificate_instructor ci2
-       JOIN sys_user u ON ci2.instructor_user_id = u.id
-       WHERE ci2.certificate_id = c.id) as teacher_names,
-      (SELECT COALESCE(ARRAY_AGG(u.teacher_id ORDER BY u.teacher_id), ARRAY[]::text[])
-       FROM certificate_instructor ci2
-       JOIN sys_user u ON ci2.instructor_user_id = u.id
-       WHERE ci2.certificate_id = c.id) as teacher_ids
+      -- 教师聚合（从certificate_recipient.instructor_id获取，去重）
+      (SELECT COALESCE(ARRAY_AGG(DISTINCT u.real_name ORDER BY u.real_name), ARRAY[]::text[])
+       FROM certificate_recipient cr2
+       JOIN sys_user u ON cr2.instructor_id = u.id
+       WHERE cr2.certificate_id = c.id) as teacher_names,
+      (SELECT COALESCE(ARRAY_AGG(DISTINCT u.teacher_id ORDER BY u.teacher_id), ARRAY[]::text[])
+       FROM certificate_recipient cr2
+       JOIN sys_user u ON cr2.instructor_id = u.id
+       WHERE cr2.certificate_id = c.id) as teacher_ids
     FROM certificate c
     LEFT JOIN college col ON c.owner_college_id = col.id
     LEFT JOIN competition_event ce ON c.event_id = ce.id
@@ -278,7 +296,7 @@
       cc.category_name,
       c.cert_title,
       c.award_level,
-      c.issu_date,
+      c.issue_date,
       c.resource_key,
       c.status,
       c.remark,
@@ -297,7 +315,7 @@
     LEFT JOIN subject_group sg ON c.group_id = sg.id
     LEFT JOIN competition_category cc ON c.category_id = cc.id
     -- 关联获取当前证书持有教师的信息
-    LEFT JOIN sys_user holder ON ci.instructor_user_id = holder.id
+    LEFT JOIN sys_user holder ON ci.user_id = holder.id
     WHERE c.owner_college_id = #{collegeId}
       AND c.cert_type = 'INSTRUCTOR'
     ORDER BY created_at DESC, id
@@ -318,7 +336,7 @@
       cc.category_name,
       c.cert_title,
       c.award_level,
-      c.issu_date,
+      c.issue_date,
       c.resource_key,
       c.status,
       c.remark,
@@ -326,21 +344,21 @@
       -- 学生聚合
       (SELECT COALESCE(ARRAY_AGG(u.real_name ORDER BY u.real_name), ARRAY[]::text[])
        FROM certificate_recipient cr2
-       JOIN sys_user u ON cr2.recipient_user_id = u.id
+       JOIN sys_user u ON cr2.user_id = u.id
        WHERE cr2.certificate_id = c.id) as student_names,
       (SELECT COALESCE(ARRAY_AGG(u.student_id ORDER BY u.student_id), ARRAY[]::text[])
        FROM certificate_recipient cr2
-       JOIN sys_user u ON cr2.recipient_user_id = u.id
+       JOIN sys_user u ON cr2.user_id = u.id
        WHERE cr2.certificate_id = c.id) as student_ids,
-      -- 教师聚合
-      (SELECT COALESCE(ARRAY_AGG(u.real_name ORDER BY u.real_name), ARRAY[]::text[])
-       FROM certificate_instructor ci2
-       JOIN sys_user u ON ci2.instructor_user_id = u.id
-       WHERE ci2.certificate_id = c.id) as teacher_names,
-      (SELECT COALESCE(ARRAY_AGG(u.teacher_id ORDER BY u.teacher_id), ARRAY[]::text[])
-       FROM certificate_instructor ci2
-       JOIN sys_user u ON ci2.instructor_user_id = u.id
-       WHERE ci2.certificate_id = c.id) as teacher_ids
+      -- 教师聚合（从certificate_recipient.instructor_id获取，去重）
+      (SELECT COALESCE(ARRAY_AGG(DISTINCT u.real_name ORDER BY u.real_name), ARRAY[]::text[])
+       FROM certificate_recipient cr2
+       JOIN sys_user u ON cr2.instructor_id = u.id
+       WHERE cr2.certificate_id = c.id) as teacher_names,
+      (SELECT COALESCE(ARRAY_AGG(DISTINCT u.teacher_id ORDER BY u.teacher_id), ARRAY[]::text[])
+       FROM certificate_recipient cr2
+       JOIN sys_user u ON cr2.instructor_id = u.id
+       WHERE cr2.certificate_id = c.id) as teacher_ids
     FROM certificate c
     LEFT JOIN college col ON c.owner_college_id = col.id
     LEFT JOIN competition_event ce ON c.event_id = ce.id
@@ -364,7 +382,7 @@
       cc.category_name,
       c.cert_title,
       c.award_level,
-      c.issu_date,
+      c.issue_date,
       c.resource_key,
       c.status,
       c.remark,
@@ -382,7 +400,7 @@
     LEFT JOIN competition_session cs ON c.session_id = cs.id
     LEFT JOIN subject_group sg ON c.group_id = sg.id
     LEFT JOIN competition_category cc ON c.category_id = cc.id
-    LEFT JOIN sys_user holder ON ci.instructor_user_id = holder.id
+    LEFT JOIN sys_user holder ON ci.user_id = holder.id
     WHERE c.cert_type = 'INSTRUCTOR'
     ORDER BY created_at DESC, id
   </select>
@@ -402,7 +420,7 @@
       cc.category_name,
       c.cert_title,
       c.award_level,
-      c.issu_date,
+      c.issue_date,
       c.resource_key,
       c.status,
       c.remark,
@@ -410,21 +428,21 @@
       -- 学生聚合
       (SELECT COALESCE(ARRAY_AGG(u.real_name ORDER BY u.real_name), ARRAY[]::text[])
        FROM certificate_recipient cr2
-       JOIN sys_user u ON cr2.recipient_user_id = u.id
+       JOIN sys_user u ON cr2.user_id = u.id
        WHERE cr2.certificate_id = c.id) as student_names,
       (SELECT COALESCE(ARRAY_AGG(u.student_id ORDER BY u.student_id), ARRAY[]::text[])
        FROM certificate_recipient cr2
-       JOIN sys_user u ON cr2.recipient_user_id = u.id
+       JOIN sys_user u ON cr2.user_id = u.id
        WHERE cr2.certificate_id = c.id) as student_ids,
-      -- 教师聚合（学生证书可能有多教师）
-      (SELECT COALESCE(ARRAY_AGG(u.real_name ORDER BY u.real_name), ARRAY[]::text[])
-       FROM certificate_instructor ci2
-       JOIN sys_user u ON ci2.instructor_user_id = u.id
-       WHERE ci2.certificate_id = c.id) as teacher_names,
-      (SELECT COALESCE(ARRAY_AGG(u.teacher_id ORDER BY u.teacher_id), ARRAY[]::text[])
-       FROM certificate_instructor ci2
-       JOIN sys_user u ON ci2.instructor_user_id = u.id
-       WHERE ci2.certificate_id = c.id) as teacher_ids
+      -- 教师聚合（从certificate_recipient.instructor_id获取，去重）
+      (SELECT COALESCE(ARRAY_AGG(DISTINCT u.real_name ORDER BY u.real_name), ARRAY[]::text[])
+       FROM certificate_recipient cr2
+       JOIN sys_user u ON cr2.instructor_id = u.id
+       WHERE cr2.certificate_id = c.id) as teacher_names,
+      (SELECT COALESCE(ARRAY_AGG(DISTINCT u.teacher_id ORDER BY u.teacher_id), ARRAY[]::text[])
+       FROM certificate_recipient cr2
+       JOIN sys_user u ON cr2.instructor_id = u.id
+       WHERE cr2.certificate_id = c.id) as teacher_ids
     FROM certificate c
     LEFT JOIN college col ON c.owner_college_id = col.id
     LEFT JOIN competition_event ce ON c.event_id = ce.id
@@ -452,7 +470,7 @@
       cc.category_name,
       c.cert_title,
       c.award_level,
-      c.issu_date,
+      c.issue_date,
       c.resource_key,
       c.status,
       c.remark,
@@ -470,7 +488,7 @@
     LEFT JOIN competition_session cs ON c.session_id = cs.id
     LEFT JOIN subject_group sg ON c.group_id = sg.id
     LEFT JOIN competition_category cc ON c.category_id = cc.id
-    LEFT JOIN sys_user holder ON ci.instructor_user_id = holder.id
+    LEFT JOIN sys_user holder ON ci.user_id = holder.id
     WHERE c.cert_type = 'INSTRUCTOR'
       AND c.status = 'PENDING_REVIEW'
       <if test="collegeId != null">
@@ -478,4 +496,74 @@
       </if>
     ORDER BY created_at DESC, id
   </select>
+
+  <!-- 检查证书编号是否已存在 -->
+  <select id="existsCertNumberByCertNumber" resultType="java.lang.Boolean">
+    SELECT EXISTS(SELECT 1 FROM certificate WHERE cert_number = #{certNumber})
+  </select>
+
+  <!-- 插入证书记录 -->
+  <insert id="insertCertificate" useGeneratedKeys="true" keyProperty="id">
+    INSERT INTO certificate (
+      cert_type,
+      cert_number,
+      owner_college_id,
+      created_by,
+      submitter_user_id,
+      reviewer_user_id,
+      event_id,
+      session_id,
+      group_id,
+      category_id,
+      cert_title,
+      award_level,
+      issue_date,
+      resource_key,
+      status,
+      remark,
+      created_at,
+      updated_at
+    ) VALUES (
+      #{certType},
+      #{certNumber},
+      #{ownerCollegeId},
+      #{createdBy},
+      #{submitterUserId},
+      #{reviewerUserId},
+      #{eventId},
+      #{sessionId},
+      #{groupId},
+      #{categoryId},
+      #{certTitle},
+      #{awardLevel},
+      #{issueDate},
+      #{resourceKey},
+      #{status},
+      #{remark},
+      #{createdAt},
+      #{updatedAt}
+    )
+  </insert>
+
+  <!-- 更新证书主表字段（不包括关联表） -->
+  <update id="updateCertificate">
+    UPDATE certificate SET
+      cert_title = #{certTitle},
+      award_level = #{awardLevel},
+      issue_date = #{issueDate},
+      resource_key = #{resourceKey},
+      remark = #{remark},
+      updated_at = #{updatedAt}
+    WHERE id = #{id}
+  </update>
+
+  <!-- 删除证书关联的学生获得者 -->
+  <delete id="deleteRecipientsByCertId">
+    DELETE FROM certificate_recipient WHERE certificate_id = #{certId}
+  </delete>
+
+  <!-- 删除证书关联的指导教师 -->
+  <delete id="deleteInstructorsByCertId">
+    DELETE FROM certificate_instructor WHERE certificate_id = #{certId}
+  </delete>
 </mapper>

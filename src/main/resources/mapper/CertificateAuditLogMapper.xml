@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.guet.competition_cert_system.mapper.CertificateAuditLogMapper">
+
+  <resultMap id="BaseResultMap" type="cn.guet.competition_cert_system.entity.CertificateAuditLog">
+    <id column="id" property="id" javaType="java.lang.Long"/>
+    <result column="certificate_id" property="certificateId" javaType="java.lang.Long"/>
+    <result column="operator_id" property="operatorId" javaType="java.lang.Long"/>
+    <result column="action" property="action" javaType="java.lang.String"/>
+    <result column="before_status" property="beforeStatus" javaType="java.lang.String"/>
+    <result column="after_status" property="afterStatus" javaType="java.lang.String"/>
+    <result column="comment" property="comment" javaType="java.lang.String"/>
+    <result column="operated_at" property="operatedAt" javaType="java.time.LocalDateTime"/>
+  </resultMap>
+
+  <select id="selectByCertificateId" resultMap="BaseResultMap">
+    SELECT * FROM certificate_audit_log
+    WHERE certificate_id = #{certificateId}
+    ORDER BY operated_at ASC
+  </select>
+
+</mapper>

@@ -1,6 +1,8 @@
 package cn.guet.competition_cert_system.service;
 
 import cn.guet.competition_cert_system.common.DataScope;
+import cn.guet.competition_cert_system.common.CertType;
+import cn.guet.competition_cert_system.dto.CertificateSubmitDTO;
 import cn.guet.competition_cert_system.vo.CertificateSimpleVO;
 import cn.guet.competition_cert_system.vo.UserCertificateDetailVO;
 
@@ -60,20 +62,30 @@ public interface CertificateService {
 
     // ==================== 创建操作 ====================
 
-    /** 提交新证书申请 */
-    void submitCertificateApplication();
+    /**
+     * 提交新证书申请
+     * @param dto 证书提交信息
+     */
+    void submitCertificateApplication(CertificateSubmitDTO dto);
 
 
     // ==================== 编辑操作 ====================
 
-    /** 编辑指定用户的指定证书 */
-    void updateCertificate();
+    /**
+     * 更新证书（ADMIN直接更新，含关联数据重建）
+     * @param certId 证书ID
+     * @param dto 更新内容
+     */
+    void updateCertificate(Long certId, CertificateSubmitDTO dto);
 
 
     // ==================== 删除操作 ====================
 
-    /** 删除指定用户的指定证书 */
-    void deleteCertificate();
+    /**
+     * 删除证书（SYSTEM_ADMIN权限，物理删除）
+     * @param certId 证书ID
+     */
+    void deleteCertificate(Long certId);
 
 
     // ==================== 上传操作 ====================

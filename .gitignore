@@ -68,5 +68,8 @@ dist/
 out/
 *.zip
 
+### Project ###
+CLAUDE.md
+
 ### SQL Draft ###
 sql/

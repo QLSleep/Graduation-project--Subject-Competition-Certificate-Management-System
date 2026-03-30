@@ -2,6 +2,7 @@ package cn.guet.competition_cert_system.entity;
 
 import java.time.LocalDateTime;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 
@@ -14,7 +15,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @TableName("sys_role")
 public class Role {
-  @TableId
+  @TableId(type = IdType.AUTO)
   private Long id;
 
   private String roleName;

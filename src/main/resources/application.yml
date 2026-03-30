@@ -29,3 +29,6 @@ jwt:
 
 file:
   upload-path: C:/MINE_FILE_QZK/Code_Project_JAVA/certificates # 证书相关图片存放位置
+
+password:
+  salt: competition_cert_salt_2024 # 密码盐值（生产环境请更换复杂字符串）

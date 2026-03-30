@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.guet.competition_cert_system.mapper.SubjectGroupMapper">
+
+  <resultMap id="GroupWithEventMap" type="cn.guet.competition_cert_system.vo.SubjectGroupSimpleVO">
+    <id column="id" property="id"/>
+    <result column="group_name" property="groupName"/>
+    <result column="description" property="description"/>
+    <result column="event_id" property="eventId"/>
+  </resultMap>
+
+  <select id="selectGroupList" resultMap="GroupWithEventMap">
+    SELECT id, group_name, description, event_id
+    FROM subject_group
+    ORDER BY id DESC
+  </select>
+
+</mapper>

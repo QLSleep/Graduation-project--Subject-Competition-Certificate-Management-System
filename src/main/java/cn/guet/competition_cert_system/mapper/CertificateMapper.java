@@ -59,19 +59,40 @@ public interface CertificateMapper extends BaseMapper<Certificate> {
    */
   List<CertificateSimpleVO> getPendingReviewCertificates(Long collegeId);
 
-  // ==================== 待实现的操作 ====================
+  // ==================== 提交证书用 ====================
 
-  /** 提交新证书申请 */
-  void submitCertificateApplication();
+  /**
+   * 检查证书编号是否已存在
+   * @param certNumber 证书编号
+   * @return 是否存在
+   */
+  Boolean existsCertNumberByCertNumber(String certNumber);
 
-  /** 编辑指定用户的指定证书 */
-  void updateCertificate();
+  /**
+   * 插入证书记录
+   * @param certificate 证书实体
+   */
+  void insertCertificate(Certificate certificate);
 
-  /** 删除指定用户的指定证书 */
-  void deleteCertificate();
+  // ==================== 编辑/删除证书用 ====================
 
-  /** 提交证书审核操作 */
-  void reviewCertificate();
+  /**
+   * 更新证书主表字段（不包括关联表，关联表需单独处理）
+   * @param certificate 证书实体
+   */
+  void updateCertificate(Certificate certificate);
+
+  /**
+   * 删除证书关联的学生获得者
+   * @param certId 证书ID
+   */
+  void deleteRecipientsByCertId(Long certId);
+
+  /**
+   * 删除证书关联的指导教师
+   * @param certId 证书ID
+   */
+  void deleteInstructorsByCertId(Long certId);
 
   /** 导出指定学院证书 */
   void exportCollegeCertificates();

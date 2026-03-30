@@ -1,7 +1,9 @@
 package cn.guet.competition_cert_system.aspect;
 
 import cn.guet.competition_cert_system.annotation.RequirePermission;
+import cn.guet.competition_cert_system.common.CertAction;
 import cn.guet.competition_cert_system.context.AuthContext;
+import cn.guet.competition_cert_system.exception.ForbiddenException;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
@@ -30,8 +32,10 @@ public class PermissionAspect {
             return;
         }
 
-        String[] requiredPermissions = annotation.value();
-        List<String> requiredList = Arrays.asList(requiredPermissions);
+        CertAction[] requiredPermissions = annotation.value();
+        List<String> requiredNames = Arrays.stream(requiredPermissions)
+                .map(CertAction::name)
+                .toList();
 
         List<String> userPermissions = AuthContext.getPermissions();
         if (userPermissions == null || userPermissions.isEmpty()) {
@@ -40,7 +44,7 @@ public class PermissionAspect {
         }
 
         boolean hasPermission = userPermissions.stream()
-                .anyMatch(requiredList::contains);
+                .anyMatch(requiredNames::contains);
 
         if (!hasPermission) {
             throwNoPermission();
@@ -48,6 +52,6 @@ public class PermissionAspect {
     }
 
     private void throwNoPermission() {
-        throw new RuntimeException("无权限操作");
+        throw new ForbiddenException();
     }
 }

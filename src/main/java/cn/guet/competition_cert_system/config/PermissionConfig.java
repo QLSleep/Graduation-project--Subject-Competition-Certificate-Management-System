@@ -15,11 +15,11 @@ import java.util.Map;
 public class PermissionConfig {
 
     private static final Map<String, UserPermission> ROLE_PERMISSION_MAP = Map.of(
-            "SYSTEM_ADMIN", new UserPermission(DataScope.ALL, List.of("SUBMIT", "REVIEW", "APPROVE", "REJECT", "REISSUE", "INVALID", "DELETE")),
-            "COLLEGE_ADMIN", new UserPermission(DataScope.COLLEGE, List.of("SUBMIT", "REVIEW", "APPROVE", "REJECT")),
-            "REVIEWER", new UserPermission(DataScope.COLLEGE, List.of("REVIEW", "APPROVE", "REJECT")),
-            "TEACHER", new UserPermission(DataScope.RELATED, List.of("SUBMIT")),
-            "STUDENT", new UserPermission(DataScope.SELF, List.of("SUBMIT"))
+            "SYSTEM_ADMIN", new UserPermission(DataScope.ALL, List.of("CREATE", "EDIT", "DELETE", "AUDIT", "REISSUE", "EXPORT", "INVALID")),
+            "COLLEGE_ADMIN", new UserPermission(DataScope.COLLEGE, List.of("CREATE", "EDIT", "AUDIT")),
+            "REVIEWER", new UserPermission(DataScope.COLLEGE, List.of("AUDIT")),
+            "TEACHER", new UserPermission(DataScope.RELATED, List.of("CREATE")),
+            "STUDENT", new UserPermission(DataScope.SELF, List.of("CREATE"))
     );
 
     /**

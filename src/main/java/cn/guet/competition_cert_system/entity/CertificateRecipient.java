@@ -2,6 +2,7 @@ package cn.guet.competition_cert_system.entity;
 
 import java.time.LocalDateTime;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 
@@ -15,7 +16,7 @@ import lombok.NoArgsConstructor;
 @TableName("certificate_recipient")
 public class CertificateRecipient {
 
-  @TableId
+  @TableId(type = IdType.AUTO)
   private Long id;
 
   private Long certificateId;
@@ -23,4 +24,6 @@ public class CertificateRecipient {
   private Long userId;
 
   private LocalDateTime createdAt;
+
+  private Long instructorId;
 }

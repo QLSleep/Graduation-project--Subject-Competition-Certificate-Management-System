@@ -8,6 +8,6 @@ import org.apache.ibatis.annotations.Select;
 @Mapper
 public interface CertificateRecipientMapper extends BaseMapper<CertificateRecipient> {
 
-    @Select("SELECT EXISTS(SELECT 1 FROM certificate_recipient WHERE certificate_id = #{certId} AND recipient_user_id = #{userId})")
+    @Select("SELECT EXISTS(SELECT 1 FROM certificate_recipient WHERE certificate_id = #{certId} AND user_id = #{userId})")
     Boolean isRecipient(Long certId, Long userId);
 }

@@ -17,7 +17,7 @@ public enum CertAction {
     EDIT,
 
     /**
-     * 删除/作废证书
+     * 删除证书
      */
     DELETE,
 
@@ -34,5 +34,10 @@ public enum CertAction {
     /**
      * 导出
      */
-    EXPORT
+    EXPORT,
+
+    /**
+     * 作废
+     */
+    INVALID
 }

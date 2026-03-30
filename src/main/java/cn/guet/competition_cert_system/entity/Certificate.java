@@ -6,6 +6,7 @@ import cn.guet.competition_cert_system.common.CertType;
 import java.time.LocalDateTime;
 import java.time.LocalDate;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
@@ -17,7 +18,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @TableName("certificate")
 public class Certificate {
-  @TableId
+  @TableId(type = IdType.AUTO)
   private Long id;
 
   private CertType certType;
@@ -44,7 +45,7 @@ public class Certificate {
 
   private String awardLevel;
 
-  private LocalDate issuDate;
+  private LocalDate issueDate;
 
   private String resourceKey;
 

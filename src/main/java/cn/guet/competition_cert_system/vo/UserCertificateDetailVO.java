@@ -60,7 +60,7 @@ public class UserCertificateDetailVO {
     private String awardLevel;
 
     /** 签发日期 */
-    private LocalDate issuDate;
+    private LocalDate issueDate;
 
     /** 图片资源路径 */
     private String resourceKey;

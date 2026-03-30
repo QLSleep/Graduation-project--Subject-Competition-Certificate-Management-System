@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.guet.competition_cert_system.mapper.CompetitionCategoryMapper">
+
+  <resultMap id="CategoryWithEventMap" type="cn.guet.competition_cert_system.vo.CompetitionCategorySimpleVO">
+    <id column="id" property="id"/>
+    <result column="category_name" property="categoryName"/>
+    <result column="description" property="description"/>
+    <result column="event_id" property="eventId"/>
+  </resultMap>
+
+  <select id="selectCategoryList" resultMap="CategoryWithEventMap">
+    SELECT id, category_name, description, event_id
+    FROM competition_category
+    ORDER BY id DESC
+  </select>
+
+</mapper>

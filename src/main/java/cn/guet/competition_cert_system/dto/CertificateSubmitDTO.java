@@ -38,7 +38,7 @@ public class CertificateSubmitDTO {
     private String awardLevel;
 
     /** 签发日期 */
-    private LocalDate issuDate;
+    private LocalDate issueDate;
 
     /** 证书图片路径（上传接口返回） */
     private String resourceKey;

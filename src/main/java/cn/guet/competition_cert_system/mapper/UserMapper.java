@@ -18,4 +18,16 @@ public interface UserMapper extends BaseMapper<User> {
      */
     @Select("SELECT * FROM sys_user WHERE username = #{username}")
     User selectByUsername(@Param("username") String username);
+
+    /**
+     * 根据学号查询用户
+     */
+    @Select("SELECT * FROM sys_user WHERE student_id = #{studentId}")
+    User findByStudentId(@Param("studentId") String studentId);
+
+    /**
+     * 根据工号查询用户
+     */
+    @Select("SELECT * FROM sys_user WHERE teacher_id = #{teacherId}")
+    User findByTeacherId(@Param("teacherId") String teacherId);
 }

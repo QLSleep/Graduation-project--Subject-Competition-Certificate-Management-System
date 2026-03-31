@@ -47,6 +47,7 @@
     <result column="status" property="status" javaType="cn.guet.competition_cert_system.common.CertStatus"/>
     <result column="remark" property="remark" javaType="java.lang.String"/>
     <result column="reject_reason" property="rejectReason" javaType="java.lang.String"/>
+    <result column="created_at" property="createdAt" javaType="java.time.LocalDateTime"/>
     <!-- 关联字段 -->
     <result column="college_name" property="collegeName" javaType="java.lang.String"/>
     <result column="event_name" property="eventName" javaType="java.lang.String"/>
@@ -254,6 +255,7 @@
       c.status,
       c.remark,
       c.reject_reason,
+      c.created_at,
       -- 学生聚合
       (SELECT COALESCE(ARRAY_AGG(u.real_name ORDER BY u.real_name), ARRAY[]::text[])
        FROM certificate_recipient cr2
@@ -301,6 +303,7 @@
       c.status,
       c.remark,
       c.reject_reason,
+      c.created_at,
       -- 学生：教师证书无获得者
       ARRAY[]::text[] as student_names,
       ARRAY[]::text[] as student_ids,
@@ -341,6 +344,7 @@
       c.status,
       c.remark,
       c.reject_reason,
+      c.created_at,
       -- 学生聚合
       (SELECT COALESCE(ARRAY_AGG(u.real_name ORDER BY u.real_name), ARRAY[]::text[])
        FROM certificate_recipient cr2
@@ -387,6 +391,7 @@
       c.status,
       c.remark,
       c.reject_reason,
+      c.created_at,
       -- 学生：教师证书无获得者
       ARRAY[]::text[] as student_names,
       ARRAY[]::text[] as student_ids,
@@ -425,6 +430,7 @@
       c.status,
       c.remark,
       c.reject_reason,
+      c.created_at,
       -- 学生聚合
       (SELECT COALESCE(ARRAY_AGG(u.real_name ORDER BY u.real_name), ARRAY[]::text[])
        FROM certificate_recipient cr2
@@ -475,6 +481,7 @@
       c.status,
       c.remark,
       c.reject_reason,
+      c.created_at,
       -- 学生：教师证书无获得者
       ARRAY[]::text[] as student_names,
       ARRAY[]::text[] as student_ids,
@@ -548,10 +555,17 @@
   <!-- 更新证书主表字段（不包括关联表） -->
   <update id="updateCertificate">
     UPDATE certificate SET
+      event_id = #{eventId},
+      session_id = #{sessionId},
+      group_id = #{groupId},
+      category_id = #{categoryId},
       cert_title = #{certTitle},
       award_level = #{awardLevel},
       issue_date = #{issueDate},
-      resource_key = #{resourceKey},
+      status = #{status},
+      reviewer_user_id = #{reviewerUserId},
+      reviewed_at = #{reviewedAt},
+      reject_reason = #{rejectReason},
       remark = #{remark},
       updated_at = #{updatedAt}
     WHERE id = #{id}
@@ -566,4 +580,232 @@
   <delete id="deleteInstructorsByCertId">
     DELETE FROM certificate_instructor WHERE certificate_id = #{certId}
   </delete>
+
+  <!-- 导出学院学生证书（审核通过/补发，聚合为逗号分隔字符串） -->
+  <select id="getCollegeStudentCertificatesForExport" resultType="cn.guet.competition_cert_system.vo.CertificateExportVO">
+    SELECT
+      col.college_name AS collegeName,
+      ce.event_name AS eventName,
+      ce.level AS level,
+      ce.sponsor AS sponsor,
+      c.award_level AS awardLevel,
+      c.remark AS remark,
+      STRING_AGG(DISTINCT stu.real_name, '、' ORDER BY stu.real_name) AS studentsStr,
+      STRING_AGG(DISTINCT tch.real_name, '、' ORDER BY tch.real_name) AS instructorsStr
+    FROM certificate c
+    INNER JOIN college col ON c.owner_college_id = col.id
+    INNER JOIN competition_event ce ON c.event_id = ce.id
+    INNER JOIN certificate_recipient cr ON cr.certificate_id = c.id
+    INNER JOIN sys_user stu ON cr.user_id = stu.id
+    INNER JOIN sys_user tch ON cr.instructor_id = tch.id
+    WHERE c.owner_college_id = #{collegeId}
+      AND c.cert_type = 'STUDENT'
+      AND c.status IN ('APPROVED', 'REISSUED')
+    GROUP BY c.id, col.college_name, ce.event_name, ce.level, ce.sponsor, c.award_level, c.remark
+    ORDER BY c.issue_date DESC, c.id
+  </select>
+
+  <!-- 导出学院指导教师证书（审核通过/补发，聚合为逗号分隔字符串） -->
+  <select id="getCollegeInstructorCertificatesForExport" resultType="cn.guet.competition_cert_system.vo.CertificateExportVO">
+    SELECT
+      col.college_name AS collegeName,
+      ce.event_name AS eventName,
+      ce.level AS level,
+      ce.sponsor AS sponsor,
+      c.award_level AS awardLevel,
+      c.remark AS remark,
+      STRING_AGG(DISTINCT tch.real_name, '、' ORDER BY tch.real_name) AS instructorsStr
+    FROM certificate c
+    INNER JOIN college col ON c.owner_college_id = col.id
+    INNER JOIN competition_event ce ON c.event_id = ce.id
+    INNER JOIN certificate_instructor ci ON ci.certificate_id = c.id
+    INNER JOIN sys_user tch ON ci.user_id = tch.id
+    WHERE c.owner_college_id = #{collegeId}
+      AND c.cert_type = 'INSTRUCTOR'
+      AND c.status IN ('APPROVED', 'REISSUED')
+    GROUP BY c.id, col.college_name, ce.event_name, ce.level, ce.sponsor, c.award_level, c.remark
+    ORDER BY c.issue_date DESC, c.id
+  </select>
+
+  <!-- 导出个人学生证书（当前用户作为获奖学生的证书） -->
+  <select id="getMyStudentCertificatesForExport" resultType="cn.guet.competition_cert_system.vo.CertificateExportVO">
+    SELECT
+      col.college_name AS collegeName,
+      ce.event_name AS eventName,
+      ce.level AS level,
+      ce.sponsor AS sponsor,
+      c.award_level AS awardLevel,
+      c.remark AS remark,
+      STRING_AGG(DISTINCT stu.real_name, '、' ORDER BY stu.real_name) AS studentsStr,
+      STRING_AGG(DISTINCT tch.real_name, '、' ORDER BY tch.real_name) AS instructorsStr
+    FROM certificate c
+    INNER JOIN college col ON c.owner_college_id = col.id
+    INNER JOIN competition_event ce ON c.event_id = ce.id
+    INNER JOIN certificate_recipient cr ON cr.certificate_id = c.id
+    INNER JOIN sys_user stu ON cr.user_id = stu.id
+    INNER JOIN sys_user tch ON cr.instructor_id = tch.id
+    WHERE cr.user_id = #{userId}
+      AND c.cert_type = 'STUDENT'
+      AND c.status IN ('APPROVED', 'REISSUED')
+    GROUP BY c.id, col.college_name, ce.event_name, ce.level, ce.sponsor, c.award_level, c.remark
+    ORDER BY c.issue_date DESC, c.id
+  </select>
+
+  <!-- 导出个人指导教师证书（当前用户作为证书持有教师的证书） -->
+  <select id="getMyInstructorCertificatesForExport" resultType="cn.guet.competition_cert_system.vo.CertificateExportVO">
+    SELECT
+      col.college_name AS collegeName,
+      ce.event_name AS eventName,
+      ce.level AS level,
+      ce.sponsor AS sponsor,
+      c.award_level AS awardLevel,
+      c.remark AS remark,
+      STRING_AGG(DISTINCT tch.real_name, '、' ORDER BY tch.real_name) AS instructorsStr
+    FROM certificate c
+    INNER JOIN college col ON c.owner_college_id = col.id
+    INNER JOIN competition_event ce ON c.event_id = ce.id
+    INNER JOIN certificate_instructor ci ON ci.certificate_id = c.id
+    INNER JOIN sys_user tch ON ci.user_id = tch.id
+    WHERE ci.user_id = #{userId}
+      AND c.cert_type = 'INSTRUCTOR'
+      AND c.status IN ('APPROVED', 'REISSUED')
+    GROUP BY c.id, col.college_name, ce.event_name, ce.level, ce.sponsor, c.award_level, c.remark
+    ORDER BY c.issue_date DESC, c.id
+  </select>
+
+  <!-- 导出教师指导的学生证书（当前用户作为 instructor_id 的学生证书） -->
+  <select id="getTeacherGuidedStudentCertificatesForExport" resultType="cn.guet.competition_cert_system.vo.CertificateExportVO">
+    SELECT
+      col.college_name AS collegeName,
+      ce.event_name AS eventName,
+      ce.level AS level,
+      ce.sponsor AS sponsor,
+      c.award_level AS awardLevel,
+      c.remark AS remark,
+      STRING_AGG(DISTINCT stu.real_name, '、' ORDER BY stu.real_name) AS studentsStr,
+      STRING_AGG(DISTINCT tch.real_name, '、' ORDER BY tch.real_name) AS instructorsStr
+    FROM certificate c
+    INNER JOIN college col ON c.owner_college_id = col.id
+    INNER JOIN competition_event ce ON c.event_id = ce.id
+    INNER JOIN certificate_recipient cr ON cr.certificate_id = c.id
+    INNER JOIN sys_user stu ON cr.user_id = stu.id
+    INNER JOIN sys_user tch ON cr.instructor_id = tch.id
+    WHERE cr.instructor_id = #{teacherUserId}
+      AND c.cert_type = 'STUDENT'
+      AND c.status IN ('APPROVED', 'REISSUED')
+    GROUP BY c.id, col.college_name, ce.event_name, ce.level, ce.sponsor, c.award_level, c.remark
+    ORDER BY c.issue_date DESC, c.id
+  </select>
+
+  <!-- 导出全部学生证书（审核通过/补发，无学院过滤） -->
+  <select id="getAllStudentCertificatesForExport" resultType="cn.guet.competition_cert_system.vo.CertificateExportVO">
+    SELECT
+      col.college_name AS collegeName,
+      ce.event_name AS eventName,
+      ce.level AS level,
+      ce.sponsor AS sponsor,
+      c.award_level AS awardLevel,
+      c.remark AS remark,
+      STRING_AGG(DISTINCT stu.real_name, '、' ORDER BY stu.real_name) AS studentsStr,
+      STRING_AGG(DISTINCT tch.real_name, '、' ORDER BY tch.real_name) AS instructorsStr
+    FROM certificate c
+    INNER JOIN college col ON c.owner_college_id = col.id
+    INNER JOIN competition_event ce ON c.event_id = ce.id
+    INNER JOIN certificate_recipient cr ON cr.certificate_id = c.id
+    INNER JOIN sys_user stu ON cr.user_id = stu.id
+    INNER JOIN sys_user tch ON cr.instructor_id = tch.id
+    WHERE c.cert_type = 'STUDENT'
+      AND c.status IN ('APPROVED', 'REISSUED')
+    GROUP BY c.id, col.college_name, ce.event_name, ce.level, ce.sponsor, c.award_level, c.remark
+    ORDER BY c.issue_date DESC, c.id
+  </select>
+
+  <!-- 导出全部指导教师证书（审核通过/补发，无学院过滤） -->
+  <select id="getAllInstructorCertificatesForExport" resultType="cn.guet.competition_cert_system.vo.CertificateExportVO">
+    SELECT
+      col.college_name AS collegeName,
+      ce.event_name AS eventName,
+      ce.level AS level,
+      ce.sponsor AS sponsor,
+      c.award_level AS awardLevel,
+      c.remark AS remark,
+      STRING_AGG(DISTINCT tch.real_name, '、' ORDER BY tch.real_name) AS instructorsStr
+    FROM certificate c
+    INNER JOIN college col ON c.owner_college_id = col.id
+    INNER JOIN competition_event ce ON c.event_id = ce.id
+    INNER JOIN certificate_instructor ci ON ci.certificate_id = c.id
+    INNER JOIN sys_user tch ON ci.user_id = tch.id
+    WHERE c.cert_type = 'INSTRUCTOR'
+      AND c.status IN ('APPROVED', 'REISSUED')
+    GROUP BY c.id, col.college_name, ce.event_name, ce.level, ce.sponsor, c.award_level, c.remark
+    ORDER BY c.issue_date DESC, c.id
+  </select>
+
+  <!-- 获取指定学生的证书图片resourceKey列表（仅STUDENT类型，审核通过/补发） -->
+  <select id="getStudentCertificateImageKeys" resultType="java.lang.String">
+    SELECT c.resource_key
+    FROM certificate c
+    INNER JOIN certificate_recipient cr ON cr.certificate_id = c.id
+    WHERE cr.user_id = #{userId}
+      AND c.cert_type = 'STUDENT'
+      AND c.status IN ('APPROVED', 'REISSUED')
+      AND c.resource_key IS NOT NULL
+      AND c.resource_key != ''
+  </select>
+
+  <!-- 获取指定教师的证书图片resourceKey列表（仅INSTRUCTOR类型，审核通过/补发） -->
+  <select id="getInstructorCertificateImageKeys" resultType="java.lang.String">
+    SELECT c.resource_key
+    FROM certificate c
+    INNER JOIN certificate_instructor ci ON ci.certificate_id = c.id
+    WHERE ci.user_id = #{userId}
+      AND c.cert_type = 'INSTRUCTOR'
+      AND c.status IN ('APPROVED', 'REISSUED')
+      AND c.resource_key IS NOT NULL
+      AND c.resource_key != ''
+  </select>
+
+  <!-- 获取学院所有学生证书图片的resourceKey -->
+  <select id="getCollegeStudentCertificateImageKeys" resultType="java.lang.String">
+    SELECT c.resource_key
+    FROM certificate c
+    WHERE c.owner_college_id = #{collegeId}
+      AND c.cert_type = 'STUDENT'
+      AND c.status IN ('APPROVED', 'REISSUED')
+      AND c.resource_key IS NOT NULL
+      AND c.resource_key != ''
+  </select>
+
+  <!-- 获取学院所有教师证书图片的resourceKey -->
+  <select id="getCollegeInstructorCertificateImageKeys" resultType="java.lang.String">
+    SELECT c.resource_key
+    FROM certificate c
+    WHERE c.owner_college_id = #{collegeId}
+      AND c.cert_type = 'INSTRUCTOR'
+      AND c.status IN ('APPROVED', 'REISSUED')
+      AND c.resource_key IS NOT NULL
+      AND c.resource_key != ''
+  </select>
+
+  <!-- 获取所有学生的证书图片（含college信息，用于按学院分组ZIP） -->
+  <select id="getAllStudentCertificateImages" resultType="cn.guet.competition_cert_system.vo.CollegeCertImageVO">
+    SELECT c.resource_key AS resourceKey, c.owner_college_id AS collegeId, col.college_name AS collegeName
+    FROM certificate c
+    INNER JOIN college col ON c.owner_college_id = col.id
+    WHERE c.cert_type = 'STUDENT'
+      AND c.status IN ('APPROVED', 'REISSUED')
+      AND c.resource_key IS NOT NULL
+      AND c.resource_key != ''
+  </select>
+
+  <!-- 获取所有教师的证书图片（含college信息，用于按学院分组ZIP） -->
+  <select id="getAllInstructorCertificateImages" resultType="cn.guet.competition_cert_system.vo.CollegeCertImageVO">
+    SELECT c.resource_key AS resourceKey, c.owner_college_id AS collegeId, col.college_name AS collegeName
+    FROM certificate c
+    INNER JOIN college col ON c.owner_college_id = col.id
+    WHERE c.cert_type = 'INSTRUCTOR'
+      AND c.status IN ('APPROVED', 'REISSUED')
+      AND c.resource_key IS NOT NULL
+      AND c.resource_key != ''
+  </select>
 </mapper>

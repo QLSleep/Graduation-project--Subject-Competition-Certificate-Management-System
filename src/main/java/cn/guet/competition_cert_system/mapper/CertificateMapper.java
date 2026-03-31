@@ -2,6 +2,7 @@ package cn.guet.competition_cert_system.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import cn.guet.competition_cert_system.entity.Certificate;
+import cn.guet.competition_cert_system.vo.CertificateExportVO;
 import cn.guet.competition_cert_system.vo.CertificateSimpleVO;
 import cn.guet.competition_cert_system.vo.UserCertificateDetailVO;
 import org.apache.ibatis.annotations.Mapper;
@@ -94,15 +95,92 @@ public interface CertificateMapper extends BaseMapper<Certificate> {
    */
   void deleteInstructorsByCertId(Long certId);
 
-  /** 导出指定学院证书 */
-  void exportCollegeCertificates();
+  // ==================== 导出证书用 ====================
 
-  /** 导出所有证书 */
-  void exportAllCertificates();
+  /**
+   * 导出学院学生证书（审核通过/补发）
+   * @param collegeId 学院ID
+   * @return 导出VO列表
+   */
+  List<CertificateExportVO> getCollegeStudentCertificatesForExport(Long collegeId);
 
-  /** 导出单个指定用户所有证书 */
-  void exportUserCertificates();
+  /**
+   * 导出学院指导教师证书（审核通过/补发）
+   * @param collegeId 学院ID
+   * @return 导出VO列表
+   */
+  List<CertificateExportVO> getCollegeInstructorCertificatesForExport(Long collegeId);
 
-  /** 导出多个指定用户所有证书 */
-  void exportMultipleUsersCertificates();
+  /**
+   * 导出个人学生证书（当前用户作为获奖学生）
+   * @param userId 当前用户ID
+   * @return 导出VO列表
+   */
+  List<CertificateExportVO> getMyStudentCertificatesForExport(Long userId);
+
+  /**
+   * 导出个人指导教师证书（当前用户作为证书持有教师）
+   * @param userId 当前用户ID
+   * @return 导出VO列表
+   */
+  List<CertificateExportVO> getMyInstructorCertificatesForExport(Long userId);
+
+  /**
+   * 导出教师指导的学生证书（当前用户作为 instructor_id）
+   * @param teacherUserId 教师用户ID
+   * @return 导出VO列表
+   */
+  List<CertificateExportVO> getTeacherGuidedStudentCertificatesForExport(Long teacherUserId);
+
+  /**
+   * 导出全部学生证书（审核通过/补发）
+   * @return 导出VO列表
+   */
+  List<CertificateExportVO> getAllStudentCertificatesForExport();
+
+  /**
+   * 导出全部指导教师证书（审核通过/补发）
+   * @return 导出VO列表
+   */
+  List<CertificateExportVO> getAllInstructorCertificatesForExport();
+
+  /**
+   * 获取指定学生的证书图片resourceKey列表（仅STUDENT类型，审核通过/补发）
+   * @param userId 学生用户ID
+   * @return resourceKey列表
+   */
+  List<String> getStudentCertificateImageKeys(Long userId);
+
+  /**
+   * 获取指定教师的证书图片resourceKey列表（仅INSTRUCTOR类型，审核通过/补发）
+   * @param userId 教师用户ID
+   * @return resourceKey列表
+   */
+  List<String> getInstructorCertificateImageKeys(Long userId);
+
+  /**
+   * 获取学院所有学生证书图片的resourceKey
+   * @param collegeId 学院ID
+   * @return resourceKey列表
+   */
+  List<String> getCollegeStudentCertificateImageKeys(Long collegeId);
+
+  /**
+   * 获取学院所有教师证书图片的resourceKey
+   * @param collegeId 学院ID
+   * @return resourceKey列表
+   */
+  List<String> getCollegeInstructorCertificateImageKeys(Long collegeId);
+
+  /**
+   * 获取所有学生的证书图片（含college信息，用于按学院分组）
+   * @return CollegeCertImageVO列表
+   */
+  List<cn.guet.competition_cert_system.vo.CollegeCertImageVO> getAllStudentCertificateImages();
+
+  /**
+   * 获取所有教师的证书图片（含college信息，用于按学院分组）
+   * @return CollegeCertImageVO列表
+   */
+  List<cn.guet.competition_cert_system.vo.CollegeCertImageVO> getAllInstructorCertificateImages();
 }

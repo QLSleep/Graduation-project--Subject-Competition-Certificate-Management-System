@@ -26,7 +26,27 @@ public enum ResultCode {
   USER_NO_ROLE(50016, "该用户未分配角色"),
   TOKEN_INVALID(50017, "Token无效或已过期"),
   REFRESH_TOKEN_EXPIRED(50018, "Refresh Token无效或已过期"),
-  UNAUTHORIZED_ERROR(50019, "未授权");
+  UNAUTHORIZED_ERROR(50019, "未授权"),
+
+  // === 审核错误（50020+）===
+  CERT_STATUS_NOT_ALLOWED(50020, "证书状态不允许此操作"),
+  CERT_NOT_PENDING_REVIEW(50021, "证书不在待审核状态"),
+  CERT_NOT_APPROVED(50022, "证书未通过审核"),
+  CERT_ALREADY_REVIEWED(50023, "证书已审核"),
+  REVIEW_COMMENT_REQUIRED(50024, "审核备注不能为空"),
+
+  // === 图片错误（50025+）===
+  CERT_IMAGE_NOT_FOUND(50025, "证书图片不存在"),
+  CERT_IMAGE_NOT_UPLOADED(50026, "证书图片未上传"),
+
+  // === 用户错误（50030+）===
+  USERNAME_EXISTS(50030, "用户名已存在"),
+  STUDENT_ID_EXISTS(50031, "学号已存在"),
+  TEACHER_ID_EXISTS(50032, "工号已存在"),
+  PASSWORD_MISMATCH(50033, "两次密码不一致"),
+  INVALID_USER_TYPE(50034, "无效的用户类型"),
+  VERIFY_CODE_ERROR(50035, "验证码错误或已过期"),
+  COLLEGE_ADMIN_CANNOT_CREATE_ADMIN(50036, "院管无权创建管理员账户");
 
   private final int code;
   private final String message;

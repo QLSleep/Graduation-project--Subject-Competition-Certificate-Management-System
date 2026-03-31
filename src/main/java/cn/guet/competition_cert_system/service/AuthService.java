@@ -26,6 +26,28 @@ public interface AuthService {
      */
     void logout(Long userId);
 
+    /**
+     * 发送注册验证码
+     * @param email 邮箱地址
+     */
+    void sendRegisterCode(String email);
+
+    /**
+     * 发送找回密码验证码
+     * @param username 用户名
+     * @param email 邮箱地址
+     */
+    void sendResetCode(String username, String email);
+
+    /**
+     * 重置密码
+     * @param username 用户名
+     * @param email 邮箱地址
+     * @param code 验证码
+     * @param newPassword 新密码
+     */
+    void resetPassword(String username, String email, String code, String newPassword);
+
     // ==================== 内部类 ====================
 
     /**

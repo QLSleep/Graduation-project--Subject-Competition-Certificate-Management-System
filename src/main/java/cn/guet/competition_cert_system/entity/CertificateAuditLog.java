@@ -31,8 +31,9 @@ public class CertificateAuditLog {
     /**
      * 操作类型
      * SUBMIT: 提交
-     * REJECT: 驳回
      * APPROVE: 通过
+     * REJECT: 驳回-可重提
+     * REJECT_NO_RESUBMIT: 驳回-不可重提
      * REISSUE: 补发
      * INVALID: 作废
      */

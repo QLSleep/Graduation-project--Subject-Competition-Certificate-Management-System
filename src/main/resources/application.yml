@@ -12,6 +12,20 @@ spring:
       port: 6379
       password: 123456
       database: 3
+  mail:
+    host: smtp.qq.com
+    port: 587
+    username: qzkabcd@qq.com
+    password: ${MAIL_AUTH_CODE:}
+    default-encoding: UTF-8
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
 
 mybatis-plus:
   type-aliases-package: cn.guet.competition_cert_system.entity

@@ -3,12 +3,11 @@ package cn.guet.competition_cert_system.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import cn.guet.competition_cert_system.entity.Role;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Select;
 
-/**
- * Role 数据访问层接口
- * 基于 MyBatis-Plus 的Mapper接口
- */
 @Mapper
 public interface RoleMapper extends BaseMapper<Role> {
 
+    @Select("SELECT * FROM sys_role WHERE role_name = #{roleName}")
+    Role selectByRoleName(String roleName);
 }

@@ -1,12 +1,15 @@
 package cn.guet.competition_cert_system.service;
 
-import cn.guet.competition_cert_system.common.DataScope;
-import cn.guet.competition_cert_system.common.CertType;
+import cn.guet.competition_cert_system.dto.CertificateExportResult;
 import cn.guet.competition_cert_system.dto.CertificateSubmitDTO;
+import cn.guet.competition_cert_system.vo.CertificateExportVO;
 import cn.guet.competition_cert_system.vo.CertificateSimpleVO;
 import cn.guet.competition_cert_system.vo.UserCertificateDetailVO;
 
+import java.io.File;
 import java.util.List;
+
+import org.springframework.web.multipart.MultipartFile;
 
 public interface CertificateService {
 
@@ -90,28 +93,123 @@ public interface CertificateService {
 
     // ==================== 上传操作 ====================
 
-    /** 上传证书相关图片 */
-    void uploadCertificateImage();
+    /**
+     * 上传证书图片
+     * @param certId 证书ID
+     * @param file 图片文件
+     * @return 生成的resourceKey
+     */
+    String uploadCertificateImage(Long certId, MultipartFile file);
 
 
     // ==================== 审核操作 ====================
 
-    /** 提交证书审核操作 */
-    void reviewCertificate();
+    /**
+     * 审核证书
+     * @param certId 证书ID
+     * @param action 审核动作（APPROVE/REJECT/REJECT_NO_RESUBMIT/REISSUE/INVALID）
+     * @param comment 备注/驳回原因/作废原因
+     */
+    void reviewCertificate(Long certId, String action, String comment);
 
 
     // ==================== 导出操作 ====================
 
-    /** 导出指定学院证书 */
-    void exportCollegeCertificates();
+    /**
+     * 导出学院学生证书Excel
+     * 权限校验：DataScope为COLLEGE时仅能导本学院，ALL时可导任意学院
+     * @param collegeId 学院ID
+     * @return 导出结果（数据+文件名）
+     */
+    CertificateExportResult exportCollegeStudentCertificates(Long collegeId);
 
-    /** 导出所有证书 */
-    void exportAllCertificates();
+    /**
+     * 导出学院指导教师证书Excel
+     * 权限校验：DataScope为COLLEGE时仅能导本学院，ALL时可导任意学院
+     * @param collegeId 学院ID
+     * @return 导出结果（数据+文件名）
+     */
+    CertificateExportResult exportCollegeInstructorCertificates(Long collegeId);
 
-    /** 导出单个指定用户所有证书 */
-    void exportUserCertificates();
+    /**
+     * 导出个人学生证书Excel（当前用户作为获奖学生）
+     * 权限校验：SELF，仅能导自己的证书
+     * @return 导出结果（数据+文件名）
+     */
+    CertificateExportResult exportMyStudentCertificates();
 
-    /** 导出多个指定用户所有证书 */
-    void exportMultipleUsersCertificates();
+    /**
+     * 导出个人指导教师证书Excel（当前用户作为证书持有教师）
+     * 权限校验：SELF，仅能导自己的证书
+     * @return 导出结果（数据+文件名）
+     */
+    CertificateExportResult exportMyInstructorCertificates();
+
+    /**
+     * 导出教师指导的学生证书Excel（当前用户作为指导教师的学生证书）
+     * 权限校验：RELATED，仅能导自己指导的学生证书
+     * @return 导出结果（数据+文件名）
+     */
+    CertificateExportResult exportTeacherGuidedStudentCertificates();
+
+    /**
+     * 导出全部学生证书Excel
+     * 权限校验：ALL，仅超管可导全部
+     * @return 导出结果（数据+文件名）
+     */
+    CertificateExportResult exportAllStudentCertificates();
+
+    /**
+     * 导出全部指导教师证书Excel
+     * 权限校验：ALL，仅超管可导全部
+     * @return 导出结果（数据+文件名）
+     */
+    CertificateExportResult exportAllInstructorCertificates();
+
+    /**
+     * 下载证书图片
+     * 权限校验：SELF/RELATED/COLLEGE/ALL（根据角色自动判断）
+     * @param certId 证书ID
+     * @return 证书图片文件
+     */
+    File downloadCertificateImage(Long certId);
+
+    /**
+     * 下载指定学生的所有证书图片（ZIP）
+     * 权限校验：SELF/RELATED/COLLEGE/ALL
+     * @param studentId 学生用户ID
+     * @return ZIP文件
+     */
+    File downloadStudentCertificateImages(Long studentId);
+
+    /**
+     * 下载指定教师的所有证书图片（ZIP，仅INSTRUCTOR类型）
+     * 权限校验：SELF/COLLEGE/ALL
+     * @param teacherId 教师用户ID
+     * @return ZIP文件
+     */
+    File downloadInstructorCertificateImages(Long teacherId);
+
+    /**
+     * 下载指定学院的所有证书图片（ZIP，含学生/教师子文件夹）
+     * 权限校验：COLLEGE（限本学院）/ ALL
+     * @param collegeId 学院ID
+     * @return ZIP文件
+     */
+    File downloadCollegeCertificateImages(Long collegeId);
+
+    /**
+     * 导出所有学生的证书图片（ZIP，按学院分组）
+     * 权限校验：ALL，仅超管
+     * @return ZIP文件
+     */
+    File downloadAllStudentCertificateImages();
+
+    /**
+     * 导出所有教师的证书图片（ZIP，按学院分组）
+     * 权限校验：ALL，仅超管
+     * @return ZIP文件
+     */
+    File downloadAllTeacherCertificateImages();
 
 }

@@ -14,6 +14,7 @@ public enum CertAuditAction {
     SUBMIT("提交"),
     REVIEW("审核"),
     REJECT("驳回"),
+    REJECT_NO_RESUBMIT("驳回-不可重提"),
     APPROVE("通过"),
     REISSUE("补发"),
     INVALID("作废");

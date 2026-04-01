@@ -80,6 +80,10 @@ public class CertificateServiceImpl implements CertificateService {
     @Override
     public UserCertificateDetailVO getCertificateDetail(Long certId) {
         DataScope dataScope = AuthContext.getDataScope();
+        if (dataScope == null) {
+            throw new BusinessException(ResultCode.UNAUTHORIZED_ERROR, "用户权限范围未设置");
+        }
+        
         Long currentUserId = AuthContext.getUserId();
         Long userCollegeId = AuthContext.getCollegeId();
 
@@ -130,8 +134,17 @@ public class CertificateServiceImpl implements CertificateService {
         // RELATED 权限：教师，只能看与自己关联的证书
         // 关联判断：这张证书的教师里有当前用户（是指导教师）
         if (dataScope == DataScope.RELATED) {
-            // 检查当前用户是否是这张证书的指导教师
-            Boolean isInstructor = certificateInstructorMapper.isInstructor(certId, currentUserId);
+            Boolean isInstructor = false;
+            
+            // INSTRUCTOR 类型证书：检查 certificate_instructor 表
+            if (cert.getCertType() == cn.guet.competition_cert_system.common.CertType.INSTRUCTOR) {
+                isInstructor = certificateInstructorMapper.isInstructor(certId, currentUserId);
+            } 
+            // STUDENT 类型证书：检查 certificate_recipient 表的 instructor_id
+            else if (cert.getCertType() == cn.guet.competition_cert_system.common.CertType.STUDENT) {
+                isInstructor = certificateRecipientMapper.isInstructor(certId, currentUserId);
+            }
+            
             if (isInstructor == null || !isInstructor) {
                 throw new ForbiddenException("无权限查看该证书");
             }

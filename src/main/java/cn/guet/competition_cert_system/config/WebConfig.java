@@ -62,7 +62,9 @@ public class WebConfig implements WebMvcConfigurer {
   public void addInterceptors(InterceptorRegistry registry) {
     registry.addInterceptor(jwtInterceptor)
         .addPathPatterns("/**")
-        .excludePathPatterns("/auth/**", "/files/**");
+        .excludePathPatterns("/auth/login", "/auth/refresh", "/auth/logout",
+            "/auth/send-register-code", "/auth/send-reset-code", "/auth/reset-password",
+            "/auth/register", "/files/**");
   }
 
 }

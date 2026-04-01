@@ -17,8 +17,12 @@ import java.security.NoSuchAlgorithmException;
 @Component
 public class PasswordUtil {
 
-    @Value("${password.salt}")
     private static String salt;
+
+    @Value("${password.salt}")
+    public void setSalt(String saltValue) {
+        PasswordUtil.salt = saltValue;
+    }
 
     private static final int MIN_PASSWORD_LENGTH = 6;
     private static final int MAX_PASSWORD_LENGTH = 20;

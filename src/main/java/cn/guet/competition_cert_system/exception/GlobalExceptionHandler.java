@@ -19,6 +19,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public Result<Void> handleException(Exception e) {
         log.error("系统异常", e);
-        return Result.error(ResultCode.SYSTEM_ERROR);
+        // 开发环境：返回异常详情帮助调试
+        String message = "系统异常: " + e.getClass().getSimpleName() + " - " + e.getMessage();
+        return Result.error(ResultCode.SYSTEM_ERROR.getCode(), message);
     }
 }

@@ -159,8 +159,16 @@ public class AuthController {
             return username;
         }
 
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
         public String getPassword() {
             return password;
+        }
+
+        public void setPassword(String password) {
+            this.password = password;
         }
     }
 
@@ -170,6 +178,10 @@ public class AuthController {
         public String getRefreshToken() {
             return refreshToken;
         }
+
+        public void setRefreshToken(String refreshToken) {
+            this.refreshToken = refreshToken;
+        }
     }
 
     public static class SendCodeRequest {
@@ -177,6 +189,10 @@ public class AuthController {
 
         public String getEmail() {
             return email;
+        }
+
+        public void setEmail(String email) {
+            this.email = email;
         }
     }
 
@@ -188,8 +204,16 @@ public class AuthController {
             return username;
         }
 
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
         public String getEmail() {
             return email;
+        }
+
+        public void setEmail(String email) {
+            this.email = email;
         }
     }
 
@@ -203,16 +227,32 @@ public class AuthController {
             return username;
         }
 
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
         public String getEmail() {
             return email;
+        }
+
+        public void setEmail(String email) {
+            this.email = email;
         }
 
         public String getCode() {
             return code;
         }
 
+        public void setCode(String code) {
+            this.code = code;
+        }
+
         public String getNewPassword() {
             return newPassword;
+        }
+
+        public void setNewPassword(String newPassword) {
+            this.newPassword = newPassword;
         }
     }
 
@@ -224,8 +264,16 @@ public class AuthController {
             return code;
         }
 
+        public void setCode(String code) {
+            this.code = code;
+        }
+
         public String getNewEmail() {
             return newEmail;
+        }
+
+        public void setNewEmail(String newEmail) {
+            this.newEmail = newEmail;
         }
     }
 }

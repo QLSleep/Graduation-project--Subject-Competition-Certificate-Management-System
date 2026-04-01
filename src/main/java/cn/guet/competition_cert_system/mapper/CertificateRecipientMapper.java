@@ -10,4 +10,7 @@ public interface CertificateRecipientMapper extends BaseMapper<CertificateRecipi
 
     @Select("SELECT EXISTS(SELECT 1 FROM certificate_recipient WHERE certificate_id = #{certId} AND user_id = #{userId})")
     Boolean isRecipient(Long certId, Long userId);
+
+    @Select("SELECT EXISTS(SELECT 1 FROM certificate_recipient WHERE certificate_id = #{certId} AND instructor_id = #{userId})")
+    Boolean isInstructor(Long certId, Long userId);
 }

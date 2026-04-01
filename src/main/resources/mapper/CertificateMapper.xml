@@ -10,7 +10,7 @@
     <result column="cert_number" property="certNumber" javaType="java.lang.String"/>
     <result column="cert_title" property="certTitle" javaType="java.lang.String"/>
     <result column="award_level" property="awardLevel" javaType="java.lang.String"/>
-    <result column="issu_date" property="issueDate" javaType="java.time.LocalDate"/>
+    <result column="issue_date" property="issueDate" javaType="java.time.LocalDate"/>
     <result column="resource_key" property="resourceKey" javaType="java.lang.String"/>
     <result column="status" property="status" javaType="cn.guet.competition_cert_system.common.CertStatus"/>
     <result column="remark" property="remark" javaType="java.lang.String"/>
@@ -29,10 +29,10 @@
     <result column="category_name" property="categoryName" javaType="java.lang.String"/>
     <result column="level" property="level" javaType="java.lang.String"/>
     <!-- 聚合字段 -->
-    <result column="student_names" property="studentNames" javaType="[Ljava.lang.String;"/>
-    <result column="student_ids" property="studentIds" javaType="[Ljava.lang.String;"/>
-    <result column="teacher_names" property="teacherNames" javaType="[Ljava.lang.String;"/>
-    <result column="teacher_ids" property="teacherIds" javaType="[Ljava.lang.String;"/>
+    <result column="student_names" property="studentNames" javaType="[Ljava.lang.String;" typeHandler="cn.guet.competition_cert_system.typehandler.StringArrayTypeHandler"/>
+    <result column="student_ids" property="studentIds" javaType="[Ljava.lang.String;" typeHandler="cn.guet.competition_cert_system.typehandler.StringArrayTypeHandler"/>
+    <result column="teacher_names" property="teacherNames" javaType="[Ljava.lang.String;" typeHandler="cn.guet.competition_cert_system.typehandler.StringArrayTypeHandler"/>
+    <result column="teacher_ids" property="teacherIds" javaType="[Ljava.lang.String;" typeHandler="cn.guet.competition_cert_system.typehandler.StringArrayTypeHandler"/>
   </resultMap>
 
   <!-- CertificateSimpleVO 结果集映射（列表用，精简字段） -->
@@ -42,7 +42,7 @@
     <result column="cert_number" property="certNumber" javaType="java.lang.String"/>
     <result column="cert_title" property="certTitle" javaType="java.lang.String"/>
     <result column="award_level" property="awardLevel" javaType="java.lang.String"/>
-    <result column="issu_date" property="issueDate" javaType="java.time.LocalDate"/>
+    <result column="issue_date" property="issueDate" javaType="java.time.LocalDate"/>
     <result column="resource_key" property="resourceKey" javaType="java.lang.String"/>
     <result column="status" property="status" javaType="cn.guet.competition_cert_system.common.CertStatus"/>
     <result column="remark" property="remark" javaType="java.lang.String"/>
@@ -56,10 +56,10 @@
     <result column="category_name" property="categoryName" javaType="java.lang.String"/>
     <result column="level" property="level" javaType="java.lang.String"/>
     <!-- 聚合字段 -->
-    <result column="student_names" property="studentNames" javaType="[Ljava.lang.String;"/>
-    <result column="student_ids" property="studentIds" javaType="[Ljava.lang.String;"/>
-    <result column="teacher_names" property="teacherNames" javaType="[Ljava.lang.String;"/>
-    <result column="teacher_ids" property="teacherIds" javaType="[Ljava.lang.String;"/>
+    <result column="student_names" property="studentNames" javaType="[Ljava.lang.String;" typeHandler="cn.guet.competition_cert_system.typehandler.StringArrayTypeHandler"/>
+    <result column="student_ids" property="studentIds" javaType="[Ljava.lang.String;" typeHandler="cn.guet.competition_cert_system.typehandler.StringArrayTypeHandler"/>
+    <result column="teacher_names" property="teacherNames" javaType="[Ljava.lang.String;" typeHandler="cn.guet.competition_cert_system.typehandler.StringArrayTypeHandler"/>
+    <result column="teacher_ids" property="teacherIds" javaType="[Ljava.lang.String;" typeHandler="cn.guet.competition_cert_system.typehandler.StringArrayTypeHandler"/>
   </resultMap>
 
   <!-- 查询指定用户的证书列表（按证书聚合，精简字段，列表用） -->
@@ -76,7 +76,7 @@
       cc.category_name,
       c.cert_title,
       c.award_level,
-      c.issu_date,
+      c.issue_date,
       c.resource_key,
       c.status,
       c.remark,
@@ -108,7 +108,7 @@
     WHERE
       (c.cert_type = 'STUDENT' AND EXISTS (
         SELECT 1 FROM certificate_recipient cr
-        WHERE cr.certificate_id = c.id AND (cr.user_id = #{userId} OR cr.instructor_id = #{userId})
+        WHERE cr.certificate_id = c.id AND cr.user_id = #{userId}
       ))
       OR (c.cert_type = 'INSTRUCTOR' AND EXISTS (
         SELECT 1 FROM certificate_instructor ci

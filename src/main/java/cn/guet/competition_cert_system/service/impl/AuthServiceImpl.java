@@ -2,6 +2,7 @@ package cn.guet.competition_cert_system.service.impl;
 
 import cn.guet.competition_cert_system.common.DataScope;
 import cn.guet.competition_cert_system.common.ResultCode;
+import cn.guet.competition_cert_system.context.AuthContext;
 import cn.guet.competition_cert_system.config.PermissionConfig;
 import cn.guet.competition_cert_system.config.PermissionConfig.UserPermission;
 import cn.guet.competition_cert_system.entity.User;
@@ -199,6 +200,55 @@ public class AuthServiceImpl implements AuthService {
 
         // 4. 删除验证码
         redisService.deleteEmailCode("reset:" + email);
+    }
+
+    @Override
+    public void sendUpdateEmailCode() {
+        // 1. 获取当前用户
+        Long userId = AuthContext.getUserId();
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException(ResultCode.USER_NOT_FOUND);
+        }
+
+        // 2. 生成验证码
+        String code = generateCode(6);
+        // 3. 存Redis，5分钟有效期，key用 update_email:{userId}
+        redisService.setEmailCode("update_email:" + userId, code, 300);
+        // 4. 发送邮件到当前邮箱
+        mailService.sendResetPasswordCode(user.getEmail(), code);
+    }
+
+    @Override
+    public void updateEmail(String code, String newEmail) {
+        // 1. 获取当前用户
+        Long userId = AuthContext.getUserId();
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException(ResultCode.USER_NOT_FOUND);
+        }
+
+        // 2. 校验验证码
+        String storedCode = redisService.getEmailCode("update_email:" + userId);
+        if (storedCode == null) {
+            throw new BusinessException(ResultCode.PARAM_ERROR, "验证码已过期");
+        }
+        if (!storedCode.equalsIgnoreCase(code)) {
+            throw new BusinessException(ResultCode.PARAM_ERROR, "验证码错误");
+        }
+
+        // 3. 校验新邮箱是否已被使用
+        User existingUser = userMapper.selectByEmail(newEmail);
+        if (existingUser != null && !existingUser.getId().equals(userId)) {
+            throw new BusinessException(ResultCode.EMAIL_EXISTS);
+        }
+
+        // 4. 更新邮箱
+        user.setEmail(newEmail);
+        userMapper.updateById(user);
+
+        // 5. 删除验证码
+        redisService.deleteEmailCode("update_email:" + userId);
     }
 
     private String generateCode(int length) {

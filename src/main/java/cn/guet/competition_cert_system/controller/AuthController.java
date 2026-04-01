@@ -123,6 +123,32 @@ public class AuthController {
         return Result.success(userService.getCurrentUser());
     }
 
+    /**
+     * 发送修改邮箱验证码到当前邮箱
+     */
+    @PostMapping("/send-update-email-code")
+    public Result<Void> sendUpdateEmailCode() {
+        try {
+            authService.sendUpdateEmailCode();
+            return Result.success();
+        } catch (RuntimeException e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 校验验证码并更新邮箱
+     */
+    @PostMapping("/update-email")
+    public Result<Void> updateEmail(@RequestBody UpdateEmailRequest request) {
+        try {
+            authService.updateEmail(request.getCode(), request.getNewEmail());
+            return Result.success();
+        } catch (RuntimeException e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
     // ==================== DTO ====================
 
     public static class LoginRequest {
@@ -187,6 +213,19 @@ public class AuthController {
 
         public String getNewPassword() {
             return newPassword;
+        }
+    }
+
+    public static class UpdateEmailRequest {
+        private String code;
+        private String newEmail;
+
+        public String getCode() {
+            return code;
+        }
+
+        public String getNewEmail() {
+            return newEmail;
         }
     }
 }

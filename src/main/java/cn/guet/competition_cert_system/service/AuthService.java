@@ -48,6 +48,18 @@ public interface AuthService {
      */
     void resetPassword(String username, String email, String code, String newPassword);
 
+    /**
+     * 发送修改邮箱验证码到当前邮箱
+     */
+    void sendUpdateEmailCode();
+
+    /**
+     * 校验验证码并更新邮箱
+     * @param code 验证码
+     * @param newEmail 新邮箱
+     */
+    void updateEmail(String code, String newEmail);
+
     // ==================== 内部类 ====================
 
     /**

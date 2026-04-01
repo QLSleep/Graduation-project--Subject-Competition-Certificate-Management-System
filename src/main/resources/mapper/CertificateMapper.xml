@@ -808,4 +808,50 @@
       AND c.resource_key IS NOT NULL
       AND c.resource_key != ''
   </select>
+
+  <!-- 统计教师持有的INSTRUCTOR类型证书（按状态分组） -->
+  <select id="countInstructorCertsByTeacher" resultType="java.util.Map">
+    SELECT c.status AS status, COUNT(*) AS count
+    FROM certificate c
+    INNER JOIN certificate_instructor ci ON c.id = ci.certificate_id
+    WHERE ci.user_id = #{teacherUserId}
+      AND c.cert_type = 'INSTRUCTOR'
+    GROUP BY c.status
+  </select>
+
+  <!-- 统计教师指导过的学生数（distinct，限APPROVED/REISSUED） -->
+  <select id="countDistinctStudentsByTeacher" resultType="java.lang.Long">
+    SELECT COUNT(DISTINCT cr.user_id)
+    FROM certificate_recipient cr
+    INNER JOIN certificate c ON cr.certificate_id = c.id
+    WHERE cr.instructor_id = #{teacherUserId}
+      AND c.status IN ('APPROVED', 'REISSUED')
+  </select>
+
+  <!-- 统计学生持有的STUDENT类型证书（按状态分组） -->
+  <select id="countStudentCertsByStudent" resultType="java.util.Map">
+    SELECT c.status AS status, COUNT(*) AS count
+    FROM certificate c
+    INNER JOIN certificate_recipient cr ON c.id = cr.certificate_id
+    WHERE cr.user_id = #{studentUserId}
+      AND c.cert_type = 'STUDENT'
+    GROUP BY c.status
+  </select>
+
+  <!-- 统计学院证书（按类型和状态分组） -->
+  <select id="countCertsByCollege" resultType="java.util.Map">
+    SELECT c.status AS status, COUNT(*) AS count
+    FROM certificate c
+    WHERE c.owner_college_id = #{collegeId}
+      AND c.cert_type = #{certType}
+    GROUP BY c.status
+  </select>
+
+  <!-- 统计所有证书（按类型和状态分组，超管用） -->
+  <select id="countCertsByType" resultType="java.util.Map">
+    SELECT c.status AS status, COUNT(*) AS count
+    FROM certificate c
+    WHERE c.cert_type = #{certType}
+    GROUP BY c.status
+  </select>
 </mapper>

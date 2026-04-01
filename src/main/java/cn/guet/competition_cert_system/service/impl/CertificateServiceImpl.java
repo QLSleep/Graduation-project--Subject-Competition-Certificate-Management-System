@@ -28,6 +28,7 @@ import cn.guet.competition_cert_system.service.CertificateService;
 import cn.guet.competition_cert_system.service.FileService;
 import cn.guet.competition_cert_system.vo.CertificateExportVO;
 import cn.guet.competition_cert_system.vo.CertificateSimpleVO;
+import cn.guet.competition_cert_system.vo.CertificateStatsVO;
 import cn.guet.competition_cert_system.vo.CollegeCertImageVO;
 import cn.guet.competition_cert_system.vo.UserCertificateDetailVO;
 import lombok.RequiredArgsConstructor;
@@ -245,7 +246,13 @@ public class CertificateServiceImpl implements CertificateService {
         certificate.setAwardLevel(dto.getAwardLevel());
         certificate.setIssueDate(dto.getIssueDate());
         certificate.setResourceKey(dto.getResourceKey());
-        certificate.setStatus(CertStatus.PENDING_REVIEW);
+        // 管理员（超管/学院管理员）提交直接通过审核，无需审核流程
+        List<String> roles = AuthContext.getRoles();
+        if (roles.contains("SYSTEM_ADMIN") || roles.contains("COLLEGE_ADMIN")) {
+            certificate.setStatus(CertStatus.APPROVED);
+        } else {
+            certificate.setStatus(CertStatus.PENDING_REVIEW);
+        }
         certificate.setRemark(dto.getRemark());
         certificate.setCreatedAt(now);
         certificate.setUpdatedAt(now);
@@ -308,8 +315,8 @@ public class CertificateServiceImpl implements CertificateService {
         auditLog.setOperatorId(currentUserId);
         auditLog.setAction("SUBMIT");
         auditLog.setBeforeStatus(null);
-        auditLog.setAfterStatus(CertStatus.PENDING_REVIEW.name());
-        auditLog.setComment("提交证书申请");
+        auditLog.setAfterStatus(certificate.getStatus().name());
+        auditLog.setComment(roles.contains("SYSTEM_ADMIN") || roles.contains("COLLEGE_ADMIN") ? "管理员直接创建并通过审核" : "提交证书申请");
         auditLog.setOperatedAt(now);
         certificateAuditLogMapper.insert(auditLog);
     }
@@ -342,6 +349,10 @@ public class CertificateServiceImpl implements CertificateService {
         existing.setAwardLevel(dto.getAwardLevel());
         existing.setIssueDate(dto.getIssueDate());
         existing.setRemark(dto.getRemark());
+        // 状态：仅当传入了有效状态时才更新（管理员直接改状态）
+        if (dto.getStatus() != null) {
+            existing.setStatus(dto.getStatus());
+        }
         existing.setUpdatedAt(now);
         certificateMapper.updateCertificate(existing);
 
@@ -1154,5 +1165,53 @@ public class CertificateServiceImpl implements CertificateService {
         }
 
         return zipFile;
+    }
+
+    // ==================== 统计操作 ====================
+
+    @Override
+    public CertificateStatsVO getMyInstructorCertStats() {
+        Long userId = AuthContext.getUserId();
+        return CertificateStatsVO.fromStatusCountList(
+                certificateMapper.countInstructorCertsByTeacher(userId));
+    }
+
+    @Override
+    public Long getMyGuidedStudentCount() {
+        Long userId = AuthContext.getUserId();
+        Long count = certificateMapper.countDistinctStudentsByTeacher(userId);
+        return count != null ? count : 0L;
+    }
+
+    @Override
+    public CertificateStatsVO getMyStudentCertStats() {
+        Long userId = AuthContext.getUserId();
+        return CertificateStatsVO.fromStatusCountList(
+                certificateMapper.countStudentCertsByStudent(userId));
+    }
+
+    @Override
+    public CertificateStatsVO getCollegeCertStats(Long collegeId, CertType certType) {
+        // 权限校验：COLLEGE_ADMIN 只能查自己学院，ALL 可查任意
+        DataScope dataScope = AuthContext.getDataScope();
+        Long userCollegeId = AuthContext.getCollegeId();
+        if (dataScope == DataScope.COLLEGE && !userCollegeId.equals(collegeId)) {
+            throw new ForbiddenException("无权限查看该学院统计");
+        }
+        if (dataScope != DataScope.ALL && dataScope != DataScope.COLLEGE) {
+            throw new ForbiddenException("无权限查看学院统计");
+        }
+        return CertificateStatsVO.fromStatusCountList(
+                certificateMapper.countCertsByCollege(collegeId, certType.name()));
+    }
+
+    @Override
+    public CertificateStatsVO getAllCertStats(CertType certType) {
+        // 权限校验：仅超管可访问
+        if (AuthContext.getDataScope() != DataScope.ALL) {
+            throw new ForbiddenException("无权限查看全部统计");
+        }
+        return CertificateStatsVO.fromStatusCountList(
+                certificateMapper.countCertsByType(certType.name()));
     }
 }

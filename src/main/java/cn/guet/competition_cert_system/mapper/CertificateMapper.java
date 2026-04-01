@@ -6,7 +6,9 @@ import cn.guet.competition_cert_system.vo.CertificateExportVO;
 import cn.guet.competition_cert_system.vo.CertificateSimpleVO;
 import cn.guet.competition_cert_system.vo.UserCertificateDetailVO;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Certificate 数据访问层接口
@@ -183,4 +185,42 @@ public interface CertificateMapper extends BaseMapper<Certificate> {
    * @return CollegeCertImageVO列表
    */
   List<cn.guet.competition_cert_system.vo.CollegeCertImageVO> getAllInstructorCertificateImages();
+
+  // ==================== 统计用 ====================
+
+  /**
+   * 统计教师持有的INSTRUCTOR类型证书（按状态分组）
+   * @param teacherUserId 教师用户ID
+   * @return List<Map<String, Object>>，每条记录含 status 和 count
+   */
+  List<Map<String, Object>> countInstructorCertsByTeacher(Long teacherUserId);
+
+  /**
+   * 统计教师指导过的学生数（distinct，限APPROVED/REISSUED）
+   * @param teacherUserId 教师用户ID
+   * @return 学生数量
+   */
+  Long countDistinctStudentsByTeacher(Long teacherUserId);
+
+  /**
+   * 统计学生持有的STUDENT类型证书（按状态分组）
+   * @param studentUserId 学生用户ID
+   * @return List<Map<String, Object>>，每条记录含 status 和 count
+   */
+  List<Map<String, Object>> countStudentCertsByStudent(Long studentUserId);
+
+  /**
+   * 统计学院证书（按类型和状态分组）
+   * @param collegeId 学院ID
+   * @param certType 证书类型（STUDENT/INSTRUCTOR）
+   * @return List<Map<String, Object>>，每条记录含 status 和 count
+   */
+  List<Map<String, Object>> countCertsByCollege(@Param("collegeId") Long collegeId, @Param("certType") String certType);
+
+  /**
+   * 统计所有证书（按类型和状态分组，超管用）
+   * @param certType 证书类型（STUDENT/INSTRUCTOR）
+   * @return List<Map<String, Object>>，每条记录含 status 和 count
+   */
+  List<Map<String, Object>> countCertsByType(@Param("certType") String certType);
 }

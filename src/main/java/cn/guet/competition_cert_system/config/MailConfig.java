@@ -16,7 +16,7 @@ public class MailConfig {
         mailSender.setHost("smtp.qq.com");
         mailSender.setPort(587);  // 587 (STARTTLS) 或 465 (SSL)
         mailSender.setUsername("qzkabcd@qq.com");
-        mailSender.setPassword("${MAIL_AUTH_CODE:}");
+        mailSender.setPassword("${spring.mail.password}");
 
         Properties props = mailSender.getJavaMailProperties();
         props.put("mail.transport.protocol", "smtp");

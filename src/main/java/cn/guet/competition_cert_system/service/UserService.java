@@ -1,6 +1,9 @@
 package cn.guet.competition_cert_system.service;
 
+import java.util.List;
+
 import cn.guet.competition_cert_system.dto.UserCreateDTO;
+import cn.guet.competition_cert_system.dto.UpdateUserDTO;
 import cn.guet.competition_cert_system.dto.UserRegisterDTO;
 import cn.guet.competition_cert_system.vo.UserVO;
 
@@ -30,4 +33,26 @@ public interface UserService {
      * @return 用户VO
      */
     UserVO getUserById(Long userId);
+
+    /**
+     * 列表查看用户
+     * 超管：查询所有非超管用户
+     * 院管：查询本院师生
+     * @return 用户列表
+     */
+    List<UserVO> listUsers();
+
+    /**
+     * 修改用户信息
+     * @param userId 用户ID
+     * @param dto 更新信息
+     */
+    void updateUser(Long userId, UpdateUserDTO dto);
+
+    /**
+     * 启用/禁用用户
+     * @param userId 用户ID
+     * @param enabled 是否启用
+     */
+    void setUserEnabled(Long userId, Boolean enabled);
 }

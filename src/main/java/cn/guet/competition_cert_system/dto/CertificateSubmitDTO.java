@@ -1,5 +1,6 @@
 package cn.guet.competition_cert_system.dto;
 
+import cn.guet.competition_cert_system.common.CertStatus;
 import cn.guet.competition_cert_system.common.CertType;
 import java.time.LocalDate;
 import java.util.List;
@@ -45,6 +46,12 @@ public class CertificateSubmitDTO {
 
     /** 备注（可选） */
     private String remark;
+
+    /**
+     * 证书状态（仅更新时使用，提交时忽略）
+     * 更新时可用：APPROVED, REISSUED, REJECTED, REJECTED_NO_RESUBMIT, INVALID
+     */
+    private CertStatus status;
 
     // ==================== 关联数据 ====================
 

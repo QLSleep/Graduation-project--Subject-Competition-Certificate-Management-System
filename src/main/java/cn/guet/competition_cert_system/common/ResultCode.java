@@ -46,7 +46,8 @@ public enum ResultCode {
   PASSWORD_MISMATCH(50033, "两次密码不一致"),
   INVALID_USER_TYPE(50034, "无效的用户类型"),
   VERIFY_CODE_ERROR(50035, "验证码错误或已过期"),
-  COLLEGE_ADMIN_CANNOT_CREATE_ADMIN(50036, "院管无权创建管理员账户");
+  COLLEGE_ADMIN_CANNOT_CREATE_ADMIN(50036, "院管无权创建管理员账户"),
+  EMAIL_EXISTS(50037, "邮箱已被使用");
 
   private final int code;
   private final String message;

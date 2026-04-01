@@ -2,6 +2,7 @@ package cn.guet.competition_cert_system.controller;
 
 import cn.guet.competition_cert_system.annotation.RequirePermission;
 import cn.guet.competition_cert_system.common.CertAction;
+import cn.guet.competition_cert_system.common.CertType;
 import cn.guet.competition_cert_system.context.AuthContext;
 import cn.guet.competition_cert_system.dto.CertificateExportResult;
 import cn.guet.competition_cert_system.dto.CertificateReviewDTO;
@@ -10,6 +11,7 @@ import cn.guet.competition_cert_system.service.CertificateService;
 import cn.guet.competition_cert_system.utils.Result;
 import cn.guet.competition_cert_system.vo.CertificateExportVO;
 import cn.guet.competition_cert_system.vo.CertificateSimpleVO;
+import cn.guet.competition_cert_system.vo.CertificateStatsVO;
 import cn.guet.competition_cert_system.vo.UserCertificateDetailVO;
 import com.alibaba.excel.EasyExcel;
 import jakarta.servlet.http.HttpServletResponse;
@@ -442,5 +444,70 @@ public class CertificateController {
                 os.write(buffer, 0, bytesRead);
             }
         }
+    }
+
+    // ==================== 统计接口 ====================
+
+    /**
+     * 24. 统计当前教师的INSTRUCTOR类型证书
+     * 无需特殊权限，登录即可
+     */
+    @GetMapping("/my/stats/instructor")
+    public Result<CertificateStatsVO> getMyInstructorCertStats() {
+        return Result.success(certificateService.getMyInstructorCertStats());
+    }
+
+    /**
+     * 25. 统计当前教师指导过的学生数（distinct，限APPROVED/REISSUED）
+     * 无需特殊权限，登录即可
+     */
+    @GetMapping("/my/stats/students/count")
+    public Result<Long> getMyGuidedStudentCount() {
+        return Result.success(certificateService.getMyGuidedStudentCount());
+    }
+
+    /**
+     * 26. 统计当前学生的STUDENT类型证书
+     * 无需特殊权限，登录即可
+     */
+    @GetMapping("/my/stats/student")
+    public Result<CertificateStatsVO> getMyStudentCertStats() {
+        return Result.success(certificateService.getMyStudentCertStats());
+    }
+
+    /**
+     * 27. 统计学院证书（STUDENT类型）
+     * 数据范围：COLLEGE限本学院，ALL可查任意（Service层校验）
+     */
+    @GetMapping("/college/{collegeId}/stats/student")
+    public Result<CertificateStatsVO> getCollegeStudentCertStats(@PathVariable Long collegeId) {
+        return Result.success(certificateService.getCollegeCertStats(collegeId, CertType.STUDENT));
+    }
+
+    /**
+     * 28. 统计学院证书（INSTRUCTOR类型）
+     * 数据范围：COLLEGE限本学院，ALL可查任意（Service层校验）
+     */
+    @GetMapping("/college/{collegeId}/stats/instructor")
+    public Result<CertificateStatsVO> getCollegeInstructorCertStats(@PathVariable Long collegeId) {
+        return Result.success(certificateService.getCollegeCertStats(collegeId, CertType.INSTRUCTOR));
+    }
+
+    /**
+     * 29. 统计所有证书（STUDENT类型，仅超管）
+     * 数据范围：ALL（Service层校验）
+     */
+    @GetMapping("/all/stats/student")
+    public Result<CertificateStatsVO> getAllStudentCertStats() {
+        return Result.success(certificateService.getAllCertStats(CertType.STUDENT));
+    }
+
+    /**
+     * 30. 统计所有证书（INSTRUCTOR类型，仅超管）
+     * 数据范围：ALL（Service层校验）
+     */
+    @GetMapping("/all/stats/instructor")
+    public Result<CertificateStatsVO> getAllInstructorCertStats() {
+        return Result.success(certificateService.getAllCertStats(CertType.INSTRUCTOR));
     }
 }

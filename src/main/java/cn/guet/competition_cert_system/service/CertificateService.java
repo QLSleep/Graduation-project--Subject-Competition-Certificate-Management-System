@@ -1,9 +1,11 @@
 package cn.guet.competition_cert_system.service;
 
+import cn.guet.competition_cert_system.common.CertType;
 import cn.guet.competition_cert_system.dto.CertificateExportResult;
 import cn.guet.competition_cert_system.dto.CertificateSubmitDTO;
 import cn.guet.competition_cert_system.vo.CertificateExportVO;
 import cn.guet.competition_cert_system.vo.CertificateSimpleVO;
+import cn.guet.competition_cert_system.vo.CertificateStatsVO;
 import cn.guet.competition_cert_system.vo.UserCertificateDetailVO;
 
 import java.io.File;
@@ -211,5 +213,40 @@ public interface CertificateService {
      * @return ZIP文件
      */
     File downloadAllTeacherCertificateImages();
+
+    // ==================== 统计操作 ====================
+
+    /**
+     * 统计当前教师的INSTRUCTOR类型证书（total + 按状态分类）
+     * @return 统计结果
+     */
+    CertificateStatsVO getMyInstructorCertStats();
+
+    /**
+     * 统计当前教师指导过的学生数（distinct，限APPROVED/REISSUED）
+     * @return 学生数量
+     */
+    Long getMyGuidedStudentCount();
+
+    /**
+     * 统计当前学生的STUDENT类型证书（total + 按状态分类）
+     * @return 统计结果
+     */
+    CertificateStatsVO getMyStudentCertStats();
+
+    /**
+     * 统计学院证书（按类型和状态分类）
+     * @param collegeId 学院ID
+     * @param certType 证书类型
+     * @return 统计结果
+     */
+    CertificateStatsVO getCollegeCertStats(Long collegeId, CertType certType);
+
+    /**
+     * 统计所有证书（按类型和状态分类，超管用）
+     * @param certType 证书类型
+     * @return 统计结果
+     */
+    CertificateStatsVO getAllCertStats(CertType certType);
 
 }

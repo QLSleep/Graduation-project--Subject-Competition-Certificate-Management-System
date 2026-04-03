@@ -602,6 +602,25 @@ public class CertificateController {
     }
 
     /**
+     * 40. 统计待审核证书数量（超管专用，全部数据）
+     * @return 待审核证书数量
+     */
+    @GetMapping("/all/stats/pending/count")
+    public Result<Long> countAllPendingReviewCertificates() {
+        return Result.success(certificateService.countAllPendingReviewCertificates());
+    }
+
+    /**
+     * 41. 统计待审核证书数量（学院管理员专用，按 collegeId 过滤）
+     * @param collegeId 学院ID
+     * @return 待审核证书数量
+     */
+    @GetMapping("/college/{collegeId}/stats/pending/count")
+    public Result<Long> countCollegePendingReviewCertificates(@PathVariable Long collegeId) {
+        return Result.success(certificateService.countCollegePendingReviewCertificates(collegeId));
+    }
+
+    /**
      * 34. 查询教师自己持有的INSTRUCTOR类型证书状态分布（个人）
      * @return 状态分布（含百分比）
      */

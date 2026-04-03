@@ -1366,6 +1366,28 @@ public class CertificateServiceImpl implements CertificateService {
     }
 
     @Override
+    public Long countAllPendingReviewCertificates() {
+        // 权限校验：仅超管
+        if (AuthContext.getDataScope() != DataScope.ALL) {
+            throw new ForbiddenException("无权限查看全部待审核证书统计");
+        }
+        return certificateMapper.countPendingReviewCertificates(null);
+    }
+
+    @Override
+    public Long countCollegePendingReviewCertificates(Long collegeId) {
+        // 权限校验：COLLEGE_ADMIN 只能查自己学院
+        DataScope dataScope = AuthContext.getDataScope();
+        if (dataScope == DataScope.COLLEGE && !AuthContext.getCollegeId().equals(collegeId)) {
+            throw new ForbiddenException("无权限查看该学院待审核证书统计");
+        }
+        if (dataScope != DataScope.ALL && dataScope != DataScope.COLLEGE) {
+            throw new ForbiddenException("无权限查看待审核证书统计");
+        }
+        return certificateMapper.countPendingReviewCertificates(collegeId);
+    }
+
+    @Override
     public CollegeDistributionResponseVO getCollegeDistribution() {
         // 1. 权限校验：仅超管
         if (AuthContext.getDataScope() != DataScope.ALL) {

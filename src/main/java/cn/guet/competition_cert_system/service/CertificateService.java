@@ -300,6 +300,16 @@ public interface CertificateService {
     CertificateStatusDistributionVO getCollegeCertificateStatusDistribution(Long collegeId, CertType certType);
 
     /**
+     * 统计待审核证书数量（超管专用，查全部）
+     */
+    Long countAllPendingReviewCertificates();
+
+    /**
+     * 统计待审核证书数量（学院管理员专用，按 collegeId 过滤）
+     */
+    Long countCollegePendingReviewCertificates(Long collegeId);
+
+    /**
      * 获取证书学院分布统计（仅超管）
      * - 有效证书 = APPROVED + REISSUED
      * - 返回所有学院，无有效证书的学院数量为0

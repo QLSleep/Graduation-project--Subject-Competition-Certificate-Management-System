@@ -504,6 +504,27 @@
     ORDER BY created_at DESC, id
   </select>
 
+  <!-- 统计待审核证书数量（联合查询 STUDENT 和 INSTRUCTOR 两种类型） -->
+  <select id="countPendingReviewCertificates" resultType="java.lang.Long">
+    SELECT (
+      (SELECT COUNT(*) FROM certificate c
+       WHERE c.cert_type = 'STUDENT'
+         AND c.status = 'PENDING_REVIEW'
+         <if test="collegeId != null">
+           AND c.owner_college_id = #{collegeId}
+         </if>
+      ) + (
+      SELECT COUNT(*) FROM certificate_instructor ci
+       INNER JOIN certificate c ON ci.certificate_id = c.id
+       WHERE c.cert_type = 'INSTRUCTOR'
+         AND c.status = 'PENDING_REVIEW'
+         <if test="collegeId != null">
+           AND c.owner_college_id = #{collegeId}
+         </if>
+      )
+    ) AS total
+  </select>
+
   <!-- 检查证书编号是否已存在 -->
   <select id="existsCertNumberByCertNumber" resultType="java.lang.Boolean">
     SELECT EXISTS(SELECT 1 FROM certificate WHERE cert_number = #{certNumber})
@@ -843,7 +864,9 @@
     SELECT c.status AS status, COUNT(*) AS count
     FROM certificate c
     WHERE c.owner_college_id = #{collegeId}
-      AND c.cert_type = #{certType}
+      <if test="certType != null">
+        AND c.cert_type = #{certType}
+      </if>
     GROUP BY c.status
   </select>
 
@@ -851,7 +874,11 @@
   <select id="countCertsByType" resultType="java.util.Map">
     SELECT c.status AS status, COUNT(*) AS count
     FROM certificate c
-    WHERE c.cert_type = #{certType}
+    <where>
+      <if test="certType != null">
+        AND c.cert_type = #{certType}
+      </if>
+    </where>
     GROUP BY c.status
   </select>
 

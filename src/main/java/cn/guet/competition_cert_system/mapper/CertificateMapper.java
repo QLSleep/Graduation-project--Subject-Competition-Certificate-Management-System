@@ -63,6 +63,13 @@ public interface CertificateMapper extends BaseMapper<Certificate> {
    */
   List<CertificateSimpleVO> getPendingReviewCertificates(Long collegeId);
 
+  /**
+   * 统计待审核证书数量
+   * @param collegeId 学院ID（null 表示查全部）
+   * @return 待审核证书数量
+   */
+  Long countPendingReviewCertificates(Long collegeId);
+
   // ==================== 提交证书用 ====================
 
   /**

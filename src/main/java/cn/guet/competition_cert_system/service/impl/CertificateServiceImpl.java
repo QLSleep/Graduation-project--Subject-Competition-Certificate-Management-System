@@ -1238,31 +1238,32 @@ public class CertificateServiceImpl implements CertificateService {
     }
 
     @Override
+    @Deprecated
     public CertificateTrendResponseVO getCertificateTrend(CertType certType) {
-        // 1. 权限校验
-        DataScope dataScope = AuthContext.getDataScope();
-        if (dataScope != DataScope.ALL && dataScope != DataScope.COLLEGE) {
-            throw new ForbiddenException("无权限查看证书趋势统计");
-        }
+        return getAllCertificateTrend(certType);
+    }
 
-        // 2. 计算日期范围：结束日期 = 服务器当前日期 - 1 天，开始日期 = 结束日期 - 29 天
+    @Override
+    @Deprecated
+    public CertificateStatusDistributionVO getCertificateStatusDistribution(CertType certType) {
+        return getAllCertificateStatusDistribution(certType);
+    }
+
+    @Override
+    public CertificateTrendResponseVO getAllCertificateTrend(CertType certType) {
+        // 权限校验：仅超管
+        if (AuthContext.getDataScope() != DataScope.ALL) {
+            throw new ForbiddenException("无权限查看全部证书趋势统计");
+        }
+        // 计算日期范围
         LocalDate endDate = LocalDate.now().minusDays(1);
         LocalDate startDate = endDate.minusDays(29);
         String startDateStr = startDate.format(DateTimeFormatter.ISO_LOCAL_DATE);
         String endDateStr = endDate.format(DateTimeFormatter.ISO_LOCAL_DATE);
-
-        // 3. 查询数据
-        List<Map<String, Object>> rawData;
-        if (dataScope == DataScope.ALL) {
-            rawData = certificateMapper.countDailyCertsByDateRange(
-                    certType != null ? certType.name() : null, startDateStr, endDateStr);
-        } else {
-            Long collegeId = AuthContext.getCollegeId();
-            rawData = certificateMapper.countDailyCertsByCollegeAndDateRange(
-                    collegeId, certType != null ? certType.name() : null, startDateStr, endDateStr);
-        }
-
-        // 4. 将查询结果按日期聚合：date -> (status -> count)
+        // 查询全量数据
+        List<Map<String, Object>> rawData = certificateMapper.countDailyCertsByDateRange(
+                certType != null ? certType.name() : null, startDateStr, endDateStr);
+        // 聚合并返回
         Map<LocalDate, Map<String, Long>> groupedByDate = new LinkedHashMap<>();
         for (Map<String, Object> row : rawData) {
             LocalDate date = LocalDate.parse((String) row.get("date"));
@@ -1270,8 +1271,6 @@ public class CertificateServiceImpl implements CertificateService {
             Long count = ((Number) row.get("count")).longValue();
             groupedByDate.computeIfAbsent(date, k -> new LinkedHashMap<>()).put(status, count);
         }
-
-        // 5. 生成30天数据，填充缺失日期为零
         List<CertificateTrendVO> dailyData = new ArrayList<>();
         LocalDate current = startDate;
         while (!current.isAfter(endDate)) {
@@ -1290,30 +1289,79 @@ public class CertificateServiceImpl implements CertificateService {
             dailyData.add(vo);
             current = current.plusDays(1);
         }
-
         return new CertificateTrendResponseVO(startDateStr, endDateStr, dailyData);
     }
 
     @Override
-    public CertificateStatusDistributionVO getCertificateStatusDistribution(CertType certType) {
-        // 1. 权限校验
+    public CertificateStatusDistributionVO getAllCertificateStatusDistribution(CertType certType) {
+        // 权限校验：仅超管
+        if (AuthContext.getDataScope() != DataScope.ALL) {
+            throw new ForbiddenException("无权限查看全部证书状态分布统计");
+        }
+        CertificateStatsVO stats = CertificateStatsVO.fromStatusCountList(
+                certificateMapper.countCertsByType(certType != null ? certType.name() : null));
+        return CertificateStatusDistributionVO.fromStatsVO(stats);
+    }
+
+    @Override
+    public CertificateTrendResponseVO getCollegeCertificateTrend(Long collegeId, CertType certType) {
+        // 权限校验：COLLEGE_ADMIN 只能查自己学院
         DataScope dataScope = AuthContext.getDataScope();
+        if (dataScope == DataScope.COLLEGE && !AuthContext.getCollegeId().equals(collegeId)) {
+            throw new ForbiddenException("无权限查看该学院统计");
+        }
+        if (dataScope != DataScope.ALL && dataScope != DataScope.COLLEGE) {
+            throw new ForbiddenException("无权限查看证书趋势统计");
+        }
+        // 计算日期范围
+        LocalDate endDate = LocalDate.now().minusDays(1);
+        LocalDate startDate = endDate.minusDays(29);
+        String startDateStr = startDate.format(DateTimeFormatter.ISO_LOCAL_DATE);
+        String endDateStr = endDate.format(DateTimeFormatter.ISO_LOCAL_DATE);
+        // 查询学院数据
+        List<Map<String, Object>> rawData = certificateMapper.countDailyCertsByCollegeAndDateRange(
+                collegeId, certType != null ? certType.name() : null, startDateStr, endDateStr);
+        // 聚合并返回
+        Map<LocalDate, Map<String, Long>> groupedByDate = new LinkedHashMap<>();
+        for (Map<String, Object> row : rawData) {
+            LocalDate date = LocalDate.parse((String) row.get("date"));
+            String status = (String) row.get("status");
+            Long count = ((Number) row.get("count")).longValue();
+            groupedByDate.computeIfAbsent(date, k -> new LinkedHashMap<>()).put(status, count);
+        }
+        List<CertificateTrendVO> dailyData = new ArrayList<>();
+        LocalDate current = startDate;
+        while (!current.isAfter(endDate)) {
+            CertificateTrendVO vo = new CertificateTrendVO(current);
+            Map<String, Long> statusCounts = groupedByDate.get(current);
+            if (statusCounts != null) {
+                vo.setDraft(statusCounts.getOrDefault("DRAFT", 0L));
+                vo.setPendingReview(statusCounts.getOrDefault("PENDING_REVIEW", 0L));
+                vo.setRejected(statusCounts.getOrDefault("REJECTED", 0L));
+                vo.setRejectedNoResubmit(statusCounts.getOrDefault("REJECTED_NO_RESUBMIT", 0L));
+                vo.setApproved(statusCounts.getOrDefault("APPROVED", 0L));
+                vo.setReissued(statusCounts.getOrDefault("REISSUED", 0L));
+                vo.setInvalid(statusCounts.getOrDefault("INVALID", 0L));
+                vo.calcTotal();
+            }
+            dailyData.add(vo);
+            current = current.plusDays(1);
+        }
+        return new CertificateTrendResponseVO(startDateStr, endDateStr, dailyData);
+    }
+
+    @Override
+    public CertificateStatusDistributionVO getCollegeCertificateStatusDistribution(Long collegeId, CertType certType) {
+        // 权限校验：COLLEGE_ADMIN 只能查自己学院
+        DataScope dataScope = AuthContext.getDataScope();
+        if (dataScope == DataScope.COLLEGE && !AuthContext.getCollegeId().equals(collegeId)) {
+            throw new ForbiddenException("无权限查看该学院统计");
+        }
         if (dataScope != DataScope.ALL && dataScope != DataScope.COLLEGE) {
             throw new ForbiddenException("无权限查看证书状态分布统计");
         }
-
-        // 2. 获取统计数据
-        CertificateStatsVO stats;
-        if (dataScope == DataScope.ALL) {
-            stats = CertificateStatsVO.fromStatusCountList(
-                    certificateMapper.countCertsByType(certType != null ? certType.name() : null));
-        } else {
-            Long collegeId = AuthContext.getCollegeId();
-            stats = CertificateStatsVO.fromStatusCountList(
-                    certificateMapper.countCertsByCollege(collegeId, certType != null ? certType.name() : null));
-        }
-
-        // 3. 转换为分布VO（含百分比）
+        CertificateStatsVO stats = CertificateStatsVO.fromStatusCountList(
+                certificateMapper.countCertsByCollege(collegeId, certType != null ? certType.name() : null));
         return CertificateStatusDistributionVO.fromStatsVO(stats);
     }
 

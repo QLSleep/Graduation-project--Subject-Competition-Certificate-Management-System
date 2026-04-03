@@ -518,9 +518,11 @@ public class CertificateController {
      * 31. 获取30天证书趋势统计
      * 数据范围：SYSTEM_ADMIN 可查全部，COLLEGE_ADMIN 只查本学院
      * 无需特殊操作权限，登录即可访问
+     * @deprecated 请使用 /all/stats/trend（超管）或 /college/{collegeId}/stats/trend（学院管理员）
      * @param certType 证书类型（STUDENT/INSTRUCTOR，不传则查全部）
      * @return 趋势数据
      */
+    @Deprecated
     @GetMapping("/stats/trend")
     public Result<CertificateTrendResponseVO> getCertificateTrend(
             @RequestParam(required = false) CertType certType) {
@@ -531,13 +533,63 @@ public class CertificateController {
      * 32. 获取证书状态分布统计
      * 数据范围：SYSTEM_ADMIN 可查全部，COLLEGE_ADMIN 只查本学院
      * 无需特殊操作权限，登录即可访问
+     * @deprecated 请使用 /all/stats/distribution（超管）或 /college/{collegeId}/stats/distribution（学院管理员）
      * @param certType 证书类型（STUDENT/INSTRUCTOR，不传则查全部）
      * @return 状态分布（含百分比）
      */
+    @Deprecated
     @GetMapping("/stats/distribution")
     public Result<CertificateStatusDistributionVO> getCertificateStatusDistribution(
             @RequestParam(required = false) CertType certType) {
         return Result.success(certificateService.getCertificateStatusDistribution(certType));
+    }
+
+    /**
+     * 36. 获取30天证书趋势统计（超管专用，全部数据）
+     * @param certType 证书类型（STUDENT/INSTRUCTOR，不传则查全部）
+     * @return 趋势数据
+     */
+    @GetMapping("/all/stats/trend")
+    public Result<CertificateTrendResponseVO> getAllCertificateTrend(
+            @RequestParam(required = false) CertType certType) {
+        return Result.success(certificateService.getAllCertificateTrend(certType));
+    }
+
+    /**
+     * 37. 获取证书状态分布统计（超管专用，全部数据）
+     * @param certType 证书类型（STUDENT/INSTRUCTOR，不传则查全部）
+     * @return 状态分布（含百分比）
+     */
+    @GetMapping("/all/stats/distribution")
+    public Result<CertificateStatusDistributionVO> getAllCertificateStatusDistribution(
+            @RequestParam(required = false) CertType certType) {
+        return Result.success(certificateService.getAllCertificateStatusDistribution(certType));
+    }
+
+    /**
+     * 38. 获取30天证书趋势统计（学院管理员专用，按 collegeId 过滤）
+     * @param collegeId 学院ID
+     * @param certType 证书类型（STUDENT/INSTRUCTOR，不传则查全部）
+     * @return 趋势数据
+     */
+    @GetMapping("/college/{collegeId}/stats/trend")
+    public Result<CertificateTrendResponseVO> getCollegeCertificateTrend(
+            @PathVariable Long collegeId,
+            @RequestParam(required = false) CertType certType) {
+        return Result.success(certificateService.getCollegeCertificateTrend(collegeId, certType));
+    }
+
+    /**
+     * 39. 获取证书状态分布统计（学院管理员专用，按 collegeId 过滤）
+     * @param collegeId 学院ID
+     * @param certType 证书类型（STUDENT/INSTRUCTOR，不传则查全部）
+     * @return 状态分布（含百分比）
+     */
+    @GetMapping("/college/{collegeId}/stats/distribution")
+    public Result<CertificateStatusDistributionVO> getCollegeCertificateStatusDistribution(
+            @PathVariable Long collegeId,
+            @RequestParam(required = false) CertType certType) {
+        return Result.success(certificateService.getCollegeCertificateStatusDistribution(collegeId, certType));
     }
 
     /**

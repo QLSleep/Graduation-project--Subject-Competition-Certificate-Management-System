@@ -258,9 +258,11 @@ public interface CertificateService {
      * - 开始日期 = 结束日期 - 29 天（共30天）
      * - 无数据的日期返回全0
      * - SYSTEM_ADMIN 可查全部，COLLEGE_ADMIN 只查本学院
+     * @deprecated 请使用 {@link #getAllCertificateTrend(CertType)} 或 {@link #getCollegeCertificateTrend(Long, CertType)}
      * @param certType 证书类型（STUDENT/INSTRUCTOR/null表示全部）
      * @return 趋势数据
      */
+    @Deprecated
     CertificateTrendResponseVO getCertificateTrend(CertType certType);
 
     /**
@@ -270,10 +272,32 @@ public interface CertificateService {
      * - 已驳回 = REJECTED + REJECTED_NO_RESUBMIT
      * - 已废弃 = INVALID
      * - SYSTEM_ADMIN 可查全部，COLLEGE_ADMIN 只查本学院
+     * @deprecated 请使用 {@link #getAllCertificateStatusDistribution(CertType)} 或 {@link #getCollegeCertificateStatusDistribution(Long, CertType)}
      * @param certType 证书类型（STUDENT/INSTRUCTOR/null表示全部）
      * @return 状态分布（含百分比）
      */
+    @Deprecated
     CertificateStatusDistributionVO getCertificateStatusDistribution(CertType certType);
+
+    /**
+     * 获取30天证书趋势统计（超管专用，查全部数据）
+     */
+    CertificateTrendResponseVO getAllCertificateTrend(CertType certType);
+
+    /**
+     * 获取证书状态分布统计（超管专用，查全部数据）
+     */
+    CertificateStatusDistributionVO getAllCertificateStatusDistribution(CertType certType);
+
+    /**
+     * 获取30天证书趋势统计（学院管理员专用，按 collegeId 过滤）
+     */
+    CertificateTrendResponseVO getCollegeCertificateTrend(Long collegeId, CertType certType);
+
+    /**
+     * 获取证书状态分布统计（学院管理员专用，按 collegeId 过滤）
+     */
+    CertificateStatusDistributionVO getCollegeCertificateStatusDistribution(Long collegeId, CertType certType);
 
     /**
      * 获取证书学院分布统计（仅超管）

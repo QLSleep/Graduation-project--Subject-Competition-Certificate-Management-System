@@ -3,6 +3,7 @@ package cn.guet.competition_cert_system.vo;
 import cn.guet.competition_cert_system.common.CertStatus;
 import cn.guet.competition_cert_system.common.CertType;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
@@ -63,6 +64,9 @@ public class CertificateSimpleVO {
 
     /** 驳回原因（列表展示，查看驳回原因） */
     private String rejectReason;
+
+    /** 创建时间 */
+    private LocalDateTime createdAt;
 
     // ========== 以下为内部字段 ==========
 

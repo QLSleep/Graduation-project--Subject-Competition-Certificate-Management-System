@@ -60,6 +60,14 @@ public interface AuthService {
      */
     void updateEmail(String code, String newEmail);
 
+    /**
+     * 修改密码（需登录）
+     * @param oldPassword 旧密码
+     * @param newPassword 新密码
+     * @param confirmPassword 确认新密码
+     */
+    void changePassword(String oldPassword, String newPassword, String confirmPassword);
+
     // ==================== 内部类 ====================
 
     /**

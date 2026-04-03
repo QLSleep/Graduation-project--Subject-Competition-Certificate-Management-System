@@ -96,7 +96,7 @@ public class UserServiceImpl implements UserService {
         userMapper.insert(user);
 
         // 7. 分配角色
-        Role role = roleMapper.selectByRoleName(dto.getType());
+        Role role = roleMapper.selectByRoleName("ROLE_" + dto.getType());
         if (role == null) {
             throw new BusinessException(ResultCode.ROLE_NOT_CONFIGURED);
         }
@@ -176,7 +176,7 @@ public class UserServiceImpl implements UserService {
         userMapper.insert(user);
 
         // 10. 分配角色
-        Role role = roleMapper.selectByRoleName(dto.getType());
+        Role role = roleMapper.selectByRoleName("ROLE_" + dto.getType());
         if (role == null) {
             throw new BusinessException(ResultCode.ROLE_NOT_CONFIGURED);
         }

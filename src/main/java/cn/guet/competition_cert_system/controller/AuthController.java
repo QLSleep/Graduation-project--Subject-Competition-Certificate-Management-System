@@ -149,6 +149,19 @@ public class AuthController {
         }
     }
 
+    /**
+     * 修改密码（需登录）
+     */
+    @PutMapping("/change-password")
+    public Result<Void> changePassword(@RequestBody ChangePasswordRequest request) {
+        try {
+            authService.changePassword(request.getOldPassword(), request.getNewPassword(), request.getConfirmPassword());
+            return Result.success();
+        } catch (RuntimeException e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
     // ==================== DTO ====================
 
     public static class LoginRequest {
@@ -274,6 +287,36 @@ public class AuthController {
 
         public void setNewEmail(String newEmail) {
             this.newEmail = newEmail;
+        }
+    }
+
+    public static class ChangePasswordRequest {
+        private String oldPassword;
+        private String newPassword;
+        private String confirmPassword;
+
+        public String getOldPassword() {
+            return oldPassword;
+        }
+
+        public void setOldPassword(String oldPassword) {
+            this.oldPassword = oldPassword;
+        }
+
+        public String getNewPassword() {
+            return newPassword;
+        }
+
+        public void setNewPassword(String newPassword) {
+            this.newPassword = newPassword;
+        }
+
+        public String getConfirmPassword() {
+            return confirmPassword;
+        }
+
+        public void setConfirmPassword(String confirmPassword) {
+            this.confirmPassword = confirmPassword;
         }
     }
 }

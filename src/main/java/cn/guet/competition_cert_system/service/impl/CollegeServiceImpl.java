@@ -8,11 +8,14 @@ import cn.guet.competition_cert_system.entity.College;
 import cn.guet.competition_cert_system.exception.BusinessException;
 import cn.guet.competition_cert_system.mapper.CollegeMapper;
 import cn.guet.competition_cert_system.service.CollegeService;
+import cn.guet.competition_cert_system.vo.CollegeSimpleVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -94,5 +97,18 @@ public class CollegeServiceImpl implements CollegeService {
         }
         college.setUpdatedAt(LocalDateTime.now());
         collegeMapper.updateById(college);
+    }
+
+    @Override
+    public List<CollegeSimpleVO> listAllColleges() {
+        return collegeMapper.selectList(null).stream()
+                .map(c -> {
+                    CollegeSimpleVO vo = new CollegeSimpleVO();
+                    vo.setId(c.getId());
+                    vo.setCollegeName(c.getCollegeName());
+                    vo.setCollegeCode(c.getCollegeCode());
+                    return vo;
+                })
+                .collect(Collectors.toList());
     }
 }

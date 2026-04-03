@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -59,12 +60,22 @@ public class WebConfig implements WebMvcConfigurer {
   }
 
   @Override
+  public void addCorsMappings(CorsRegistry registry) {
+    registry.addMapping("/**")
+        .allowedOrigins("http://localhost:5173", "http://localhost:3000", "http://172.20.176.1")
+        .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
+        .allowedHeaders("*")
+        .allowCredentials(true)
+        .maxAge(3600);
+  }
+
+  @Override
   public void addInterceptors(InterceptorRegistry registry) {
     registry.addInterceptor(jwtInterceptor)
         .addPathPatterns("/**")
-        .excludePathPatterns("/auth/login", "/auth/refresh", "/auth/logout",
+        .excludePathPatterns("/auth/login", "/auth/refresh",
             "/auth/send-register-code", "/auth/send-reset-code", "/auth/reset-password",
-            "/auth/register", "/files/**");
+            "/auth/register", "/files/**", "/api/college");
   }
 
 }

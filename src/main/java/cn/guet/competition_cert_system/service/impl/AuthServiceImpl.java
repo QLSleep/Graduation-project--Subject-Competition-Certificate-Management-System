@@ -172,6 +172,7 @@ public class AuthServiceImpl implements AuthService {
         redisService.setEmailCode("reset:" + email, code, 300);
         // 4. 发送邮件
         mailService.sendResetPasswordCode(email, code);
+        System.out.println("重置密码的验证码: "+username+"  "+code);//调试用
     }
 
     @Override
@@ -217,6 +218,7 @@ public class AuthServiceImpl implements AuthService {
         redisService.setEmailCode("update_email:" + userId, code, 300);
         // 4. 发送邮件到当前邮箱
         mailService.sendResetPasswordCode(user.getEmail(), code);
+        System.out.println("重置邮箱的验证码: "+user.getEmail()+"  "+code);//调试用
     }
 
     @Override
@@ -249,6 +251,30 @@ public class AuthServiceImpl implements AuthService {
 
         // 5. 删除验证码
         redisService.deleteEmailCode("update_email:" + userId);
+    }
+
+    @Override
+    public void changePassword(String oldPassword, String newPassword, String confirmPassword) {
+        // 1. 获取当前用户
+        Long userId = AuthContext.getUserId();
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException(ResultCode.USER_NOT_FOUND);
+        }
+
+        // 2. 校验旧密码
+        if (!PasswordUtil.matches(oldPassword, user.getPassword())) {
+            throw new BusinessException(ResultCode.PARAM_ERROR, "旧密码错误");
+        }
+
+        // 3. 校验两次密码一致
+        if (!newPassword.equals(confirmPassword)) {
+            throw new BusinessException(ResultCode.PASSWORD_MISMATCH);
+        }
+
+        // 4. 更新密码
+        user.setPassword(PasswordUtil.encrypt(newPassword));
+        userMapper.updateById(user);
     }
 
     private String generateCode(int length) {

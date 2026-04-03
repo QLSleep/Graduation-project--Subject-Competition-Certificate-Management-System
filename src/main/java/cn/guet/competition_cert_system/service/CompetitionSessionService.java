@@ -9,9 +9,10 @@ public interface CompetitionSessionService {
 
     /**
      * 查询赛届列表（下拉用）
+     * @param eventId 赛事ID，可选
      * @return 赛届简单列表
      */
-    List<CompetitionSessionSimpleVO> listSessions();
+    List<CompetitionSessionSimpleVO> listSessions(Long eventId);
 
     /**
      * 新建赛届

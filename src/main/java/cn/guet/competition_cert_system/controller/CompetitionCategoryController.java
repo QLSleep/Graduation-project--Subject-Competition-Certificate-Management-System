@@ -17,8 +17,8 @@ public class CompetitionCategoryController {
     private final CompetitionCategoryService competitionCategoryService;
 
     @GetMapping
-    public Result<List<CompetitionCategorySimpleVO>> listCategories() {
-        return Result.success(competitionCategoryService.listCategories());
+    public Result<List<CompetitionCategorySimpleVO>> listCategories(@RequestParam(required = false) Long eventId) {
+        return Result.success(competitionCategoryService.listCategories(eventId));
     }
 
     @PostMapping

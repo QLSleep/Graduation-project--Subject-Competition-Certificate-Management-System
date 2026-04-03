@@ -12,6 +12,9 @@
   <select id="selectCategoryList" resultMap="CategoryWithEventMap">
     SELECT id, category_name, description, event_id
     FROM competition_category
+    <where>
+      <if test="eventId != null">AND event_id = #{eventId}</if>
+    </where>
     ORDER BY id DESC
   </select>
 

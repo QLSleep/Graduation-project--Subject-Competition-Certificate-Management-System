@@ -17,8 +17,8 @@ public class SubjectGroupController {
     private final SubjectGroupService subjectGroupService;
 
     @GetMapping
-    public Result<List<SubjectGroupSimpleVO>> listGroups() {
-        return Result.success(subjectGroupService.listGroups());
+    public Result<List<SubjectGroupSimpleVO>> listGroups(@RequestParam(required = false) Long eventId) {
+        return Result.success(subjectGroupService.listGroups(eventId));
     }
 
     @PostMapping

@@ -17,8 +17,8 @@ public class CompetitionSessionController {
     private final CompetitionSessionService competitionSessionService;
 
     @GetMapping
-    public Result<List<CompetitionSessionSimpleVO>> listSessions() {
-        return Result.success(competitionSessionService.listSessions());
+    public Result<List<CompetitionSessionSimpleVO>> listSessions(@RequestParam(required = false) Long eventId) {
+        return Result.success(competitionSessionService.listSessions(eventId));
     }
 
     @PostMapping

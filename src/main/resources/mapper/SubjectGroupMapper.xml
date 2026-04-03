@@ -12,6 +12,9 @@
   <select id="selectGroupList" resultMap="GroupWithEventMap">
     SELECT id, group_name, description, event_id
     FROM subject_group
+    <where>
+      <if test="eventId != null">AND event_id = #{eventId}</if>
+    </where>
     ORDER BY id DESC
   </select>
 

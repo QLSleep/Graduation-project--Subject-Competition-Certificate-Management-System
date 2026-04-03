@@ -6,6 +6,9 @@ import cn.guet.competition_cert_system.dto.CertificateSubmitDTO;
 import cn.guet.competition_cert_system.vo.CertificateExportVO;
 import cn.guet.competition_cert_system.vo.CertificateSimpleVO;
 import cn.guet.competition_cert_system.vo.CertificateStatsVO;
+import cn.guet.competition_cert_system.vo.CertificateStatusDistributionVO;
+import cn.guet.competition_cert_system.vo.CertificateTrendResponseVO;
+import cn.guet.competition_cert_system.vo.CollegeDistributionResponseVO;
 import cn.guet.competition_cert_system.vo.UserCertificateDetailVO;
 
 import java.io.File;
@@ -248,5 +251,48 @@ public interface CertificateService {
      * @return 统计结果
      */
     CertificateStatsVO getAllCertStats(CertType certType);
+
+    /**
+     * 获取30天证书趋势统计
+     * - 结束日期 = 服务器当前日期 - 1 天
+     * - 开始日期 = 结束日期 - 29 天（共30天）
+     * - 无数据的日期返回全0
+     * - SYSTEM_ADMIN 可查全部，COLLEGE_ADMIN 只查本学院
+     * @param certType 证书类型（STUDENT/INSTRUCTOR/null表示全部）
+     * @return 趋势数据
+     */
+    CertificateTrendResponseVO getCertificateTrend(CertType certType);
+
+    /**
+     * 获取证书状态分布统计
+     * - 已通过 = APPROVED + REISSUED
+     * - 待审核 = PENDING_REVIEW
+     * - 已驳回 = REJECTED + REJECTED_NO_RESUBMIT
+     * - 已废弃 = INVALID
+     * - SYSTEM_ADMIN 可查全部，COLLEGE_ADMIN 只查本学院
+     * @param certType 证书类型（STUDENT/INSTRUCTOR/null表示全部）
+     * @return 状态分布（含百分比）
+     */
+    CertificateStatusDistributionVO getCertificateStatusDistribution(CertType certType);
+
+    /**
+     * 获取证书学院分布统计（仅超管）
+     * - 有效证书 = APPROVED + REISSUED
+     * - 返回所有学院，无有效证书的学院数量为0
+     * @return 各学院有效证书数量分布
+     */
+    CollegeDistributionResponseVO getCollegeDistribution();
+
+    /**
+     * 查询教师自己持有的INSTRUCTOR类型证书状态分布（个人）
+     * @return 状态分布（含百分比）
+     */
+    CertificateStatusDistributionVO getMyInstructorCertStatsWithPercent();
+
+    /**
+     * 查询学生自己的STUDENT类型证书状态分布（个人）
+     * @return 状态分布（含百分比）
+     */
+    CertificateStatusDistributionVO getMyStudentCertStatsWithPercent();
 
 }

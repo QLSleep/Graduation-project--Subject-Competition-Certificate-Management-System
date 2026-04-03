@@ -5,6 +5,7 @@ import java.util.List;
 import cn.guet.competition_cert_system.dto.UserCreateDTO;
 import cn.guet.competition_cert_system.dto.UpdateUserDTO;
 import cn.guet.competition_cert_system.dto.UserRegisterDTO;
+import cn.guet.competition_cert_system.vo.UserSearchVO;
 import cn.guet.competition_cert_system.vo.UserVO;
 
 public interface UserService {
@@ -55,4 +56,18 @@ public interface UserService {
      * @param enabled 是否启用
      */
     void setUserEnabled(Long userId, Boolean enabled);
+
+    /**
+     * 按学号查询学生
+     * @param studentId 学号
+     * @return 用户信息（id, realName, studentId），找不到返回 null
+     */
+    UserSearchVO getStudentByStudentId(String studentId);
+
+    /**
+     * 按工号查询教师
+     * @param teacherId 工号
+     * @return 用户信息（id, realName, teacherId），找不到返回 null
+     */
+    UserSearchVO getTeacherByTeacherId(String teacherId);
 }

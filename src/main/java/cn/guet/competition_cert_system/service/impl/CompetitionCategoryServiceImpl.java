@@ -18,8 +18,8 @@ public class CompetitionCategoryServiceImpl implements CompetitionCategoryServic
     private final CompetitionCategoryMapper competitionCategoryMapper;
 
     @Override
-    public List<CompetitionCategorySimpleVO> listCategories() {
-        return competitionCategoryMapper.selectCategoryList();
+    public List<CompetitionCategorySimpleVO> listCategories(Long eventId) {
+        return competitionCategoryMapper.selectCategoryList(eventId);
     }
 
     @Override

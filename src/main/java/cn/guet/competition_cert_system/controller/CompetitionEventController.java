@@ -1,6 +1,7 @@
 package cn.guet.competition_cert_system.controller;
 
 import cn.guet.competition_cert_system.dto.CompetitionEventCreateDTO;
+import cn.guet.competition_cert_system.dto.UpdateCompetitionEventDTO;
 import cn.guet.competition_cert_system.service.CompetitionEventService;
 import cn.guet.competition_cert_system.utils.Result;
 import cn.guet.competition_cert_system.vo.CompetitionEventSimpleVO;
@@ -24,5 +25,16 @@ public class CompetitionEventController {
     @PostMapping
     public Result<Long> createEvent(@RequestBody CompetitionEventCreateDTO dto) {
         return Result.success(competitionEventService.createEvent(dto));
+    }
+
+    /**
+     * 编辑赛事
+     * 权限：SYSTEM_ADMIN / COLLEGE_ADMIN
+     */
+    @PutMapping("/{eventId}")
+    public Result<Void> updateEvent(@PathVariable Long eventId,
+                                   @RequestBody UpdateCompetitionEventDTO dto) {
+        competitionEventService.updateEvent(eventId, dto);
+        return Result.success(null);
     }
 }

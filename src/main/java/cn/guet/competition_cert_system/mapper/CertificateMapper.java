@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import cn.guet.competition_cert_system.entity.Certificate;
 import cn.guet.competition_cert_system.vo.CertificateExportVO;
 import cn.guet.competition_cert_system.vo.CertificateSimpleVO;
+import cn.guet.competition_cert_system.vo.CollegeDistributionVO;
 import cn.guet.competition_cert_system.vo.UserCertificateDetailVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -223,4 +224,40 @@ public interface CertificateMapper extends BaseMapper<Certificate> {
    * @return List<Map<String, Object>>，每条记录含 status 和 count
    */
   List<Map<String, Object>> countCertsByType(@Param("certType") String certType);
+
+  // ==================== 趋势统计用 ====================
+
+  /**
+   * 统计每日证书数量（按日期+状态分组，限学院）
+   * @param collegeId 学院ID（null表示查全部）
+   * @param certType 证书类型（STUDENT/INSTRUCTOR/null表示全部）
+   * @param startDate 开始日期（含）
+   * @param endDate 结束日期（含）
+   * @return List<Map<String, Object>>，每条记录含 date、status、count
+   */
+  List<Map<String, Object>> countDailyCertsByCollegeAndDateRange(
+          @Param("collegeId") Long collegeId,
+          @Param("certType") String certType,
+          @Param("startDate") String startDate,
+          @Param("endDate") String endDate);
+
+  /**
+   * 统计每日证书数量（全部学院，用于超管）
+   * @param certType 证书类型（STUDENT/INSTRUCTOR/null表示全部）
+   * @param startDate 开始日期（含）
+   * @param endDate 结束日期（含）
+   * @return List<Map<String, Object>>，每条记录含 date、status、count
+   */
+  List<Map<String, Object>> countDailyCertsByDateRange(
+          @Param("certType") String certType,
+          @Param("startDate") String startDate,
+          @Param("endDate") String endDate);
+
+  // ==================== 学院分布统计用 ====================
+
+  /**
+   * 统计各学院有效证书数量（APPROVED + REISSUED），返回所有学院
+   * @return CollegeDistributionVO 列表，含 collegeId、collegeName、validCertCount
+   */
+  List<CollegeDistributionVO> countValidCertsByCollege();
 }

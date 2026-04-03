@@ -18,8 +18,8 @@ public class SubjectGroupServiceImpl implements SubjectGroupService {
     private final SubjectGroupMapper subjectGroupMapper;
 
     @Override
-    public List<SubjectGroupSimpleVO> listGroups() {
-        return subjectGroupMapper.selectGroupList();
+    public List<SubjectGroupSimpleVO> listGroups(Long eventId) {
+        return subjectGroupMapper.selectGroupList(eventId);
     }
 
     @Override

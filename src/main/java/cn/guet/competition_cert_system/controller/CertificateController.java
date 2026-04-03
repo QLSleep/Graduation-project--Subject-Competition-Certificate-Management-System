@@ -12,6 +12,9 @@ import cn.guet.competition_cert_system.utils.Result;
 import cn.guet.competition_cert_system.vo.CertificateExportVO;
 import cn.guet.competition_cert_system.vo.CertificateSimpleVO;
 import cn.guet.competition_cert_system.vo.CertificateStatsVO;
+import cn.guet.competition_cert_system.vo.CertificateStatusDistributionVO;
+import cn.guet.competition_cert_system.vo.CertificateTrendResponseVO;
+import cn.guet.competition_cert_system.vo.CollegeDistributionResponseVO;
 import cn.guet.competition_cert_system.vo.UserCertificateDetailVO;
 import com.alibaba.excel.EasyExcel;
 import jakarta.servlet.http.HttpServletResponse;
@@ -509,5 +512,58 @@ public class CertificateController {
     @GetMapping("/all/stats/instructor")
     public Result<CertificateStatsVO> getAllInstructorCertStats() {
         return Result.success(certificateService.getAllCertStats(CertType.INSTRUCTOR));
+    }
+
+    /**
+     * 31. 获取30天证书趋势统计
+     * 数据范围：SYSTEM_ADMIN 可查全部，COLLEGE_ADMIN 只查本学院
+     * 无需特殊操作权限，登录即可访问
+     * @param certType 证书类型（STUDENT/INSTRUCTOR，不传则查全部）
+     * @return 趋势数据
+     */
+    @GetMapping("/stats/trend")
+    public Result<CertificateTrendResponseVO> getCertificateTrend(
+            @RequestParam(required = false) CertType certType) {
+        return Result.success(certificateService.getCertificateTrend(certType));
+    }
+
+    /**
+     * 32. 获取证书状态分布统计
+     * 数据范围：SYSTEM_ADMIN 可查全部，COLLEGE_ADMIN 只查本学院
+     * 无需特殊操作权限，登录即可访问
+     * @param certType 证书类型（STUDENT/INSTRUCTOR，不传则查全部）
+     * @return 状态分布（含百分比）
+     */
+    @GetMapping("/stats/distribution")
+    public Result<CertificateStatusDistributionVO> getCertificateStatusDistribution(
+            @RequestParam(required = false) CertType certType) {
+        return Result.success(certificateService.getCertificateStatusDistribution(certType));
+    }
+
+    /**
+     * 33. 获取证书学院分布统计（仅超管）
+     * @return 各学院有效证书数量分布
+     */
+    @GetMapping("/stats/college/distribution")
+    public Result<CollegeDistributionResponseVO> getCollegeDistribution() {
+        return Result.success(certificateService.getCollegeDistribution());
+    }
+
+    /**
+     * 34. 查询教师自己持有的INSTRUCTOR类型证书状态分布（个人）
+     * @return 状态分布（含百分比）
+     */
+    @GetMapping("/my/stats/instructor/percent")
+    public Result<CertificateStatusDistributionVO> getMyInstructorCertStatsWithPercent() {
+        return Result.success(certificateService.getMyInstructorCertStatsWithPercent());
+    }
+
+    /**
+     * 35. 查询学生自己的STUDENT类型证书状态分布（个人）
+     * @return 状态分布（含百分比）
+     */
+    @GetMapping("/my/stats/student/percent")
+    public Result<CertificateStatusDistributionVO> getMyStudentCertStatsWithPercent() {
+        return Result.success(certificateService.getMyStudentCertStatsWithPercent());
     }
 }

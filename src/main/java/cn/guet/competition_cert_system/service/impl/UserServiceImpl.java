@@ -16,7 +16,9 @@ import cn.guet.competition_cert_system.mapper.UserRoleMapper;
 import cn.guet.competition_cert_system.service.RedisService;
 import cn.guet.competition_cert_system.service.UserService;
 import cn.guet.competition_cert_system.utils.PasswordUtil;
+import cn.guet.competition_cert_system.vo.UserSearchVO;
 import cn.guet.competition_cert_system.vo.UserVO;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -396,5 +398,35 @@ public class UserServiceImpl implements UserService {
         user.setEnabled(enabled);
         user.setUpdatedAt(LocalDateTime.now());
         userMapper.updateById(user);
+    }
+
+    @Override
+    public UserSearchVO getStudentByStudentId(String studentId) {
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(User::getStudentId, studentId);
+        User user = userMapper.selectOne(wrapper);
+        if (user == null) {
+            return null;
+        }
+        UserSearchVO vo = new UserSearchVO();
+        vo.setId(user.getId());
+        vo.setRealName(user.getRealName());
+        vo.setStudentId(user.getStudentId());
+        return vo;
+    }
+
+    @Override
+    public UserSearchVO getTeacherByTeacherId(String teacherId) {
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(User::getTeacherId, teacherId);
+        User user = userMapper.selectOne(wrapper);
+        if (user == null) {
+            return null;
+        }
+        UserSearchVO vo = new UserSearchVO();
+        vo.setId(user.getId());
+        vo.setRealName(user.getRealName());
+        vo.setTeacherId(user.getTeacherId());
+        return vo;
     }
 }

@@ -9,9 +9,10 @@ public interface SubjectGroupService {
 
     /**
      * 查询科目组别列表（下拉用）
+     * @param eventId 赛事ID，可选
      * @return 科目组别简单列表
      */
-    List<SubjectGroupSimpleVO> listGroups();
+    List<SubjectGroupSimpleVO> listGroups(Long eventId);
 
     /**
      * 新建科目组别

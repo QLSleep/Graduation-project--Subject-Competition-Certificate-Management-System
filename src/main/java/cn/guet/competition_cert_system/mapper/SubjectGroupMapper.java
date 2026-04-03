@@ -10,5 +10,5 @@ import java.util.List;
 @Mapper
 public interface SubjectGroupMapper extends BaseMapper<SubjectGroup> {
 
-    List<SubjectGroupSimpleVO> selectGroupList();
+    List<SubjectGroupSimpleVO> selectGroupList(Long eventId);
 }

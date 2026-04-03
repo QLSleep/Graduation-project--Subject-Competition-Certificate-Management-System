@@ -10,5 +10,5 @@ import java.util.List;
 @Mapper
 public interface CompetitionSessionMapper extends BaseMapper<CompetitionSession> {
 
-    List<CompetitionSessionSimpleVO> selectSessionList();
+    List<CompetitionSessionSimpleVO> selectSessionList(Long eventId);
 }

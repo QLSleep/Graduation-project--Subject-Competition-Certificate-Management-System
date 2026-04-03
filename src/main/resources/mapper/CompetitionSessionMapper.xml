@@ -14,6 +14,9 @@
     SELECT cs.id, cs.session_name, cs.year, cs.event_id, ce.event_name
     FROM competition_session cs
     LEFT JOIN competition_event ce ON cs.event_id = ce.id
+    <where>
+      <if test="eventId != null">AND cs.event_id = #{eventId}</if>
+    </where>
     ORDER BY cs.year DESC, cs.id DESC
   </select>
 

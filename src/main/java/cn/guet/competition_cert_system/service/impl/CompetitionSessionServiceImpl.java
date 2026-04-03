@@ -18,8 +18,8 @@ public class CompetitionSessionServiceImpl implements CompetitionSessionService 
     private final CompetitionSessionMapper competitionSessionMapper;
 
     @Override
-    public List<CompetitionSessionSimpleVO> listSessions() {
-        return competitionSessionMapper.selectSessionList();
+    public List<CompetitionSessionSimpleVO> listSessions(Long eventId) {
+        return competitionSessionMapper.selectSessionList(eventId);
     }
 
     @Override

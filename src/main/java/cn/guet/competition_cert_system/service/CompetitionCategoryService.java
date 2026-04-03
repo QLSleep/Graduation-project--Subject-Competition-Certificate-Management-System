@@ -9,9 +9,10 @@ public interface CompetitionCategoryService {
 
     /**
      * 查询赛类列表（下拉用）
+     * @param eventId 赛事ID，可选
      * @return 赛类简单列表
      */
-    List<CompetitionCategorySimpleVO> listCategories();
+    List<CompetitionCategorySimpleVO> listCategories(Long eventId);
 
     /**
      * 新建赛类

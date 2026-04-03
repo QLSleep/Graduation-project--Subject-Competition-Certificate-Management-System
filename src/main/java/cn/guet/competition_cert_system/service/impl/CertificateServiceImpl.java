@@ -29,7 +29,12 @@ import cn.guet.competition_cert_system.service.FileService;
 import cn.guet.competition_cert_system.vo.CertificateExportVO;
 import cn.guet.competition_cert_system.vo.CertificateSimpleVO;
 import cn.guet.competition_cert_system.vo.CertificateStatsVO;
+import cn.guet.competition_cert_system.vo.CertificateStatusDistributionVO;
+import cn.guet.competition_cert_system.vo.CertificateTrendResponseVO;
+import cn.guet.competition_cert_system.vo.CertificateTrendVO;
 import cn.guet.competition_cert_system.vo.CollegeCertImageVO;
+import cn.guet.competition_cert_system.vo.CollegeDistributionResponseVO;
+import cn.guet.competition_cert_system.vo.CollegeDistributionVO;
 import cn.guet.competition_cert_system.vo.UserCertificateDetailVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -40,7 +45,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -1226,5 +1235,117 @@ public class CertificateServiceImpl implements CertificateService {
         }
         return CertificateStatsVO.fromStatusCountList(
                 certificateMapper.countCertsByType(certType.name()));
+    }
+
+    @Override
+    public CertificateTrendResponseVO getCertificateTrend(CertType certType) {
+        // 1. 权限校验
+        DataScope dataScope = AuthContext.getDataScope();
+        if (dataScope != DataScope.ALL && dataScope != DataScope.COLLEGE) {
+            throw new ForbiddenException("无权限查看证书趋势统计");
+        }
+
+        // 2. 计算日期范围：结束日期 = 服务器当前日期 - 1 天，开始日期 = 结束日期 - 29 天
+        LocalDate endDate = LocalDate.now().minusDays(1);
+        LocalDate startDate = endDate.minusDays(29);
+        String startDateStr = startDate.format(DateTimeFormatter.ISO_LOCAL_DATE);
+        String endDateStr = endDate.format(DateTimeFormatter.ISO_LOCAL_DATE);
+
+        // 3. 查询数据
+        List<Map<String, Object>> rawData;
+        if (dataScope == DataScope.ALL) {
+            rawData = certificateMapper.countDailyCertsByDateRange(
+                    certType != null ? certType.name() : null, startDateStr, endDateStr);
+        } else {
+            Long collegeId = AuthContext.getCollegeId();
+            rawData = certificateMapper.countDailyCertsByCollegeAndDateRange(
+                    collegeId, certType != null ? certType.name() : null, startDateStr, endDateStr);
+        }
+
+        // 4. 将查询结果按日期聚合：date -> (status -> count)
+        Map<LocalDate, Map<String, Long>> groupedByDate = new LinkedHashMap<>();
+        for (Map<String, Object> row : rawData) {
+            LocalDate date = LocalDate.parse((String) row.get("date"));
+            String status = (String) row.get("status");
+            Long count = ((Number) row.get("count")).longValue();
+            groupedByDate.computeIfAbsent(date, k -> new LinkedHashMap<>()).put(status, count);
+        }
+
+        // 5. 生成30天数据，填充缺失日期为零
+        List<CertificateTrendVO> dailyData = new ArrayList<>();
+        LocalDate current = startDate;
+        while (!current.isAfter(endDate)) {
+            CertificateTrendVO vo = new CertificateTrendVO(current);
+            Map<String, Long> statusCounts = groupedByDate.get(current);
+            if (statusCounts != null) {
+                vo.setDraft(statusCounts.getOrDefault("DRAFT", 0L));
+                vo.setPendingReview(statusCounts.getOrDefault("PENDING_REVIEW", 0L));
+                vo.setRejected(statusCounts.getOrDefault("REJECTED", 0L));
+                vo.setRejectedNoResubmit(statusCounts.getOrDefault("REJECTED_NO_RESUBMIT", 0L));
+                vo.setApproved(statusCounts.getOrDefault("APPROVED", 0L));
+                vo.setReissued(statusCounts.getOrDefault("REISSUED", 0L));
+                vo.setInvalid(statusCounts.getOrDefault("INVALID", 0L));
+                vo.calcTotal();
+            }
+            dailyData.add(vo);
+            current = current.plusDays(1);
+        }
+
+        return new CertificateTrendResponseVO(startDateStr, endDateStr, dailyData);
+    }
+
+    @Override
+    public CertificateStatusDistributionVO getCertificateStatusDistribution(CertType certType) {
+        // 1. 权限校验
+        DataScope dataScope = AuthContext.getDataScope();
+        if (dataScope != DataScope.ALL && dataScope != DataScope.COLLEGE) {
+            throw new ForbiddenException("无权限查看证书状态分布统计");
+        }
+
+        // 2. 获取统计数据
+        CertificateStatsVO stats;
+        if (dataScope == DataScope.ALL) {
+            stats = CertificateStatsVO.fromStatusCountList(
+                    certificateMapper.countCertsByType(certType != null ? certType.name() : null));
+        } else {
+            Long collegeId = AuthContext.getCollegeId();
+            stats = CertificateStatsVO.fromStatusCountList(
+                    certificateMapper.countCertsByCollege(collegeId, certType != null ? certType.name() : null));
+        }
+
+        // 3. 转换为分布VO（含百分比）
+        return CertificateStatusDistributionVO.fromStatsVO(stats);
+    }
+
+    @Override
+    public CollegeDistributionResponseVO getCollegeDistribution() {
+        // 1. 权限校验：仅超管
+        if (AuthContext.getDataScope() != DataScope.ALL) {
+            throw new ForbiddenException("无权限查看学院分布统计");
+        }
+
+        // 2. 查询各学院有效证书数
+        List<CollegeDistributionVO> collegeList = certificateMapper.countValidCertsByCollege();
+
+        // 3. 计算总数
+        long total = collegeList.stream().mapToLong(CollegeDistributionVO::getValidCertCount).sum();
+
+        return new CollegeDistributionResponseVO(total, collegeList);
+    }
+
+    @Override
+    public CertificateStatusDistributionVO getMyInstructorCertStatsWithPercent() {
+        Long userId = AuthContext.getUserId();
+        CertificateStatsVO stats = CertificateStatsVO.fromStatusCountList(
+                certificateMapper.countInstructorCertsByTeacher(userId));
+        return CertificateStatusDistributionVO.fromStatsVO(stats);
+    }
+
+    @Override
+    public CertificateStatusDistributionVO getMyStudentCertStatsWithPercent() {
+        Long userId = AuthContext.getUserId();
+        CertificateStatsVO stats = CertificateStatsVO.fromStatusCountList(
+                certificateMapper.countStudentCertsByStudent(userId));
+        return CertificateStatusDistributionVO.fromStatsVO(stats);
     }
 }

@@ -854,4 +854,52 @@
     WHERE c.cert_type = #{certType}
     GROUP BY c.status
   </select>
+
+  <!-- 统计每日证书数量（按日期+状态分组，限学院） -->
+  <select id="countDailyCertsByCollegeAndDateRange" resultType="java.util.Map">
+    SELECT
+      TO_CHAR(c.created_at, 'YYYY-MM-DD') AS date,
+      c.status AS status,
+      COUNT(*) AS count
+    FROM certificate c
+    WHERE c.created_at &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+      AND c.created_at &lt; TO_DATE(#{endDate}, 'YYYY-MM-DD') + INTERVAL '1 day'
+      <if test="collegeId != null">
+        AND c.owner_college_id = #{collegeId}
+      </if>
+      <if test="certType != null">
+        AND c.cert_type = #{certType}
+      </if>
+    GROUP BY TO_CHAR(c.created_at, 'YYYY-MM-DD'), c.status
+    ORDER BY date ASC, status ASC
+  </select>
+
+  <!-- 统计每日证书数量（全部学院，用于超管） -->
+  <select id="countDailyCertsByDateRange" resultType="java.util.Map">
+    SELECT
+      TO_CHAR(c.created_at, 'YYYY-MM-DD') AS date,
+      c.status AS status,
+      COUNT(*) AS count
+    FROM certificate c
+    WHERE c.created_at &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+      AND c.created_at &lt; TO_DATE(#{endDate}, 'YYYY-MM-DD') + INTERVAL '1 day'
+      <if test="certType != null">
+        AND c.cert_type = #{certType}
+      </if>
+    GROUP BY TO_CHAR(c.created_at, 'YYYY-MM-DD'), c.status
+    ORDER BY date ASC, status ASC
+  </select>
+
+  <!-- 统计各学院有效证书数量（APPROVED + REISSUED），LEFT JOIN 确保所有学院都返回 -->
+  <select id="countValidCertsByCollege" resultType="cn.guet.competition_cert_system.vo.CollegeDistributionVO">
+    SELECT
+      col.id AS collegeId,
+      col.college_name AS collegeName,
+      COUNT(c.id) AS validCertCount
+    FROM college col
+    LEFT JOIN certificate c ON col.id = c.owner_college_id
+      AND c.status IN ('APPROVED', 'REISSUED')
+    GROUP BY col.id, col.college_name
+    ORDER BY validCertCount DESC, col.id ASC
+  </select>
 </mapper>

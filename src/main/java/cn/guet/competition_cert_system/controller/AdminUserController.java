@@ -7,6 +7,7 @@ import cn.guet.competition_cert_system.dto.UserCreateDTO;
 import cn.guet.competition_cert_system.dto.UpdateUserDTO;
 import cn.guet.competition_cert_system.service.UserService;
 import cn.guet.competition_cert_system.utils.Result;
+import cn.guet.competition_cert_system.vo.UserSearchVO;
 import cn.guet.competition_cert_system.vo.UserVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -94,5 +95,23 @@ public class AdminUserController {
         } catch (RuntimeException e) {
             return Result.error(e.getMessage());
         }
+    }
+
+    /**
+     * 按学号查询学生
+     * 权限：SYSTEM_ADMIN / COLLEGE_ADMIN
+     */
+    @GetMapping("/search/student")
+    public Result<UserSearchVO> getStudentByStudentId(@RequestParam String studentId) {
+        return Result.success(userService.getStudentByStudentId(studentId));
+    }
+
+    /**
+     * 按工号查询教师
+     * 权限：SYSTEM_ADMIN / COLLEGE_ADMIN
+     */
+    @GetMapping("/search/teacher")
+    public Result<UserSearchVO> getTeacherByTeacherId(@RequestParam String teacherId) {
+        return Result.success(userService.getTeacherByTeacherId(teacherId));
     }
 }

@@ -26,6 +26,7 @@ import cn.guet.competition_cert_system.mapper.CollegeMapper;
 import cn.guet.competition_cert_system.mapper.UserMapper;
 import cn.guet.competition_cert_system.service.CertificateService;
 import cn.guet.competition_cert_system.service.FileService;
+import cn.guet.competition_cert_system.vo.CertificateAuditLogVO;
 import cn.guet.competition_cert_system.vo.CertificateExportVO;
 import cn.guet.competition_cert_system.vo.CertificateSimpleVO;
 import cn.guet.competition_cert_system.vo.CertificateStatsVO;
@@ -165,6 +166,37 @@ public class CertificateServiceImpl implements CertificateService {
         }
 
         throw new BusinessException(ResultCode.SYSTEM_ERROR, "系统异常");
+    }
+
+    @Override
+    public List<CertificateAuditLogVO> getCertificateAuditLogs(Long certId) {
+        // 查证书是否存在
+        Certificate cert = certificateMapper.selectById(certId);
+        if (cert == null) {
+            throw new NotFoundException("证书不存在");
+        }
+
+        // 查询审核日志
+        List<CertificateAuditLog> logs = certificateAuditLogMapper.selectByCertificateId(certId);
+
+        // 填充操作人姓名
+        List<CertificateAuditLogVO> result = logs.stream().map(log -> {
+            CertificateAuditLogVO vo = new CertificateAuditLogVO();
+            vo.setId(log.getId());
+            vo.setCertificateId(log.getCertificateId());
+            vo.setOperatorId(log.getOperatorId());
+            vo.setAction(log.getAction());
+            vo.setBeforeStatus(log.getBeforeStatus());
+            vo.setAfterStatus(log.getAfterStatus());
+            vo.setComment(log.getComment());
+            vo.setOperatedAt(log.getOperatedAt());
+            // 查询操作人姓名
+            User operator = userMapper.selectById(log.getOperatorId());
+            vo.setOperatorName(operator != null ? operator.getRealName() : null);
+            return vo;
+        }).toList();
+
+        return result;
     }
 
     @Override
@@ -431,7 +463,28 @@ public class CertificateServiceImpl implements CertificateService {
             }
         }
 
-        // 5. 审核日志
+        // 5. 如果已有图片，同步重命名文件
+        String oldResourceKey = existing.getResourceKey();
+        if (oldResourceKey != null && !oldResourceKey.isEmpty()) {
+            // inserts 完成后，getCertificateDetailById 可拿到最新的姓名数据
+            UserCertificateDetailVO newDetail = certificateMapper.getCertificateDetailById(certId);
+            if (newDetail != null) {
+                newDetail.assemble();
+                String newFilename = buildFilename(newDetail);
+                String oldFilename = oldResourceKey.substring(oldResourceKey.lastIndexOf("/") + 1);
+                if (!oldFilename.equals(newFilename)) {
+                    String folder = existing.getCertNumber();
+                    fileService.renameImage(folder, oldFilename, newFilename);
+                    // 更新 resourceKey
+                    String newResourceKey = folder + "/" + newFilename;
+                    existing.setResourceKey(newResourceKey);
+                    existing.setUpdatedAt(now);
+                    certificateMapper.updateCertificate(existing);
+                }
+            }
+        }
+
+        // 6. 审核日志
         CertificateAuditLog auditLog = new CertificateAuditLog();
         auditLog.setCertificateId(certId);
         auditLog.setOperatorId(currentUserId);
@@ -523,6 +576,85 @@ public class CertificateServiceImpl implements CertificateService {
         certificateMapper.updateCertificate(certificate);
 
         return resourceKey;
+    }
+
+    @Override
+    public File downloadCertificateImage(Long certId, String filename) {
+        Certificate certificate = certificateMapper.selectById(certId);
+        if (certificate == null) {
+            throw new NotFoundException("证书不存在");
+        }
+
+        String resourceKey = certificate.getResourceKey();
+        if (resourceKey == null || resourceKey.isEmpty()) {
+            throw new NotFoundException("证书图片不存在");
+        }
+
+        // resourceKey 格式为 folder/filename，提取出目录部分
+        String folder = resourceKey.contains("/")
+                ? resourceKey.substring(0, resourceKey.lastIndexOf("/"))
+                : resourceKey;
+
+        File file = fileService.getImageFile(folder, filename);
+        if (!file.exists() || !file.isFile()) {
+            throw new NotFoundException("证书图片文件不存在");
+        }
+
+        return file;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public String updateCertificateImage(Long certId, MultipartFile file) {
+        Certificate certificate = certificateMapper.selectById(certId);
+        if (certificate == null) {
+            throw new NotFoundException("证书不存在");
+        }
+
+        // DataScope 权限校验（复用 uploadCertificateImage 的逻辑）
+        DataScope dataScope = AuthContext.getDataScope();
+        Long userCollegeId = AuthContext.getCollegeId();
+        Long currentUserId = AuthContext.getUserId();
+
+        boolean hasPermission = false;
+        if (dataScope == DataScope.ALL) {
+            hasPermission = true;
+        } else if (dataScope == DataScope.COLLEGE) {
+            hasPermission = userCollegeId.equals(certificate.getOwnerCollegeId());
+        } else if (dataScope == DataScope.SELF) {
+            hasPermission = currentUserId.equals(certificate.getCreatedBy())
+                    || currentUserId.equals(certificate.getSubmitterUserId());
+        } else if (dataScope == DataScope.RELATED) {
+            Boolean isInstructor = certificateInstructorMapper.isInstructor(certId, currentUserId);
+            hasPermission = isInstructor != null && isInstructor;
+        }
+
+        if (!hasPermission) {
+            throw new ForbiddenException("无权限更新该证书图片");
+        }
+
+        // 查询证书详情获取文件名
+        UserCertificateDetailVO detail = certificateMapper.getCertificateDetailById(certId);
+        if (detail == null) {
+            throw new NotFoundException("证书不存在");
+        }
+        detail.assemble();
+
+        String certNumber = certificate.getCertNumber();
+
+        // 1. 清空证书号目录下的所有旧文件
+        fileService.deleteFilesInDirectory(certNumber);
+
+        // 2. 构建文件名并保存新文件
+        String filename = buildFilename(detail);
+        String newResourceKey = fileService.saveImage(file, certNumber, filename);
+
+        // 3. 更新证书的resourceKey
+        certificate.setResourceKey(newResourceKey);
+        certificate.setUpdatedAt(LocalDateTime.now());
+        certificateMapper.updateCertificate(certificate);
+
+        return newResourceKey;
     }
 
     /**
@@ -759,9 +891,9 @@ public class CertificateServiceImpl implements CertificateService {
 
     @Override
     public CertificateExportResult exportMyStudentCertificates() {
-        // DataScope权限校验
+        // DataScope权限校验（SELF: 学生导自己证书，RELATED: 教师导自己证书）
         DataScope dataScope = AuthContext.getDataScope();
-        if (dataScope != DataScope.SELF) {
+        if (dataScope != DataScope.SELF && dataScope != DataScope.RELATED) {
             throw new ForbiddenException("无权限导出个人证书");
         }
         Long userId = AuthContext.getUserId();
@@ -782,9 +914,9 @@ public class CertificateServiceImpl implements CertificateService {
 
     @Override
     public CertificateExportResult exportMyInstructorCertificates() {
-        // DataScope权限校验
+        // DataScope权限校验（SELF: 学生导自己证书，RELATED: 教师导自己证书）
         DataScope dataScope = AuthContext.getDataScope();
-        if (dataScope != DataScope.SELF) {
+        if (dataScope != DataScope.SELF && dataScope != DataScope.RELATED) {
             throw new ForbiddenException("无权限导出个人证书");
         }
         Long userId = AuthContext.getUserId();

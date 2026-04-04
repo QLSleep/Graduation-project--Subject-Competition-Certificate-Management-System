@@ -153,6 +153,7 @@ public class AuthServiceImpl implements AuthService {
         redisService.setEmailCode(email, code, 300);
         // 3. 发送邮件
         mailService.sendRegisterCode(email, code);
+        System.out.println("重置密码的验证码: "+code);//调试用
     }
 
     @Override

@@ -3,6 +3,7 @@ package cn.guet.competition_cert_system.service;
 import cn.guet.competition_cert_system.common.CertType;
 import cn.guet.competition_cert_system.dto.CertificateExportResult;
 import cn.guet.competition_cert_system.dto.CertificateSubmitDTO;
+import cn.guet.competition_cert_system.vo.CertificateAuditLogVO;
 import cn.guet.competition_cert_system.vo.CertificateExportVO;
 import cn.guet.competition_cert_system.vo.CertificateSimpleVO;
 import cn.guet.competition_cert_system.vo.CertificateStatsVO;
@@ -59,6 +60,13 @@ public interface CertificateService {
      */
     List<CertificateSimpleVO> getAllCertificates();
 
+    /**
+     * 查看指定证书的审核历史（管理员/审核员用）
+     * @param certId 证书ID
+     * @return 审核历史列表（按操作时间升序）
+     */
+    List<CertificateAuditLogVO> getCertificateAuditLogs(Long certId);
+
     // ==================== 待审核查询 ====================
 
     /**
@@ -105,6 +113,22 @@ public interface CertificateService {
      * @return 生成的resourceKey
      */
     String uploadCertificateImage(Long certId, MultipartFile file);
+
+    /**
+     * 下载证书图片（支持 Unicode 文件名正确解码）
+     * @param certId 证书ID
+     * @param filename 文件名（含扩展名）
+     * @return 证书图片文件
+     */
+    File downloadCertificateImage(Long certId, String filename);
+
+    /**
+     * 更新证书图片（先清空目录旧文件，再存新文件）
+     * @param certId 证书ID
+     * @param file 图片文件
+     * @return 生成的resourceKey
+     */
+    String updateCertificateImage(Long certId, MultipartFile file);
 
 
     // ==================== 审核操作 ====================

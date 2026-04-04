@@ -9,6 +9,7 @@ import cn.guet.competition_cert_system.dto.CertificateReviewDTO;
 import cn.guet.competition_cert_system.dto.CertificateSubmitDTO;
 import cn.guet.competition_cert_system.service.CertificateService;
 import cn.guet.competition_cert_system.utils.Result;
+import cn.guet.competition_cert_system.vo.CertificateAuditLogVO;
 import cn.guet.competition_cert_system.vo.CertificateExportVO;
 import cn.guet.competition_cert_system.vo.CertificateSimpleVO;
 import cn.guet.competition_cert_system.vo.CertificateStatsVO;
@@ -71,6 +72,16 @@ public class CertificateController {
     @GetMapping("/{certId}")
     public Result<UserCertificateDetailVO> getCertificateDetail(@PathVariable Long certId) {
         return Result.success(certificateService.getCertificateDetail(certId));
+    }
+
+    /**
+     * 2.1 查询证书审核历史（管理员/审核员）
+     * 操作权限：AUDIT（SYSTEM_ADMIN / COLLEGE_ADMIN / CERT_AUDITOR）
+     */
+    @GetMapping("/{certId}/audit-logs")
+    @RequirePermission(CertAction.AUDIT)
+    public Result<List<CertificateAuditLogVO>> getCertificateAuditLogs(@PathVariable Long certId) {
+        return Result.success(certificateService.getCertificateAuditLogs(certId));
     }
 
     /**
@@ -143,6 +154,19 @@ public class CertificateController {
     public Result<String> uploadCertificateImage(@PathVariable Long certId,
                                                 @RequestParam("file") MultipartFile file) {
         String resourceKey = certificateService.uploadCertificateImage(certId, file);
+        return Result.success(resourceKey);
+    }
+
+    /**
+     * 9.1 更新证书图片（先清空目录旧文件，再存新文件）
+     * 操作权限：EDIT（SYSTEM_ADMIN / COLLEGE_ADMIN）
+     * @param filename 文件名（由前端根据buildFilename规则拼接后传入，用于生成新文件名）
+     */
+    @PutMapping("/{certId}/image")
+    @RequirePermission(CertAction.EDIT)
+    public Result<String> updateCertificateImage(@PathVariable Long certId,
+                                               @RequestParam("file") MultipartFile file) {
+        String resourceKey = certificateService.updateCertificateImage(certId, file);
         return Result.success(resourceKey);
     }
 
@@ -298,11 +322,14 @@ public class CertificateController {
      * 18. 下载证书图片
      * 操作权限：EXPORT（Controller层AOP校验）
      * 数据范围：SELF/RELATED/COLLEGE/ALL（Service层校验）
+     * @param filename 文件名（需URL编码，由前端根据buildFilename规则拼接后传入）
      */
     @RequirePermission(CertAction.EXPORT)
     @GetMapping("/{certId}/image/download")
-    public void downloadCertificateImage(@PathVariable Long certId, HttpServletResponse response) throws IOException {
-        File file = certificateService.downloadCertificateImage(certId);
+    public void downloadCertificateImage(@PathVariable Long certId,
+                                         @RequestParam String filename,
+                                         HttpServletResponse response) throws IOException {
+        File file = certificateService.downloadCertificateImage(certId, filename);
 
         response.setContentType("image/jpeg");
         response.setCharacterEncoding("utf-8");

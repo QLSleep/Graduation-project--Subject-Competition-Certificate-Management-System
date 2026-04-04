@@ -16,10 +16,10 @@ public class PermissionConfig {
 
     private static final Map<String, UserPermission> ROLE_PERMISSION_MAP = Map.of(
             "ROLE_SUPER_ADMIN", new UserPermission(DataScope.ALL, List.of("CREATE", "EDIT", "DELETE", "AUDIT", "REISSUE", "EXPORT", "INVALID")),
-            "ROLE_COLLEGE_ADMIN", new UserPermission(DataScope.COLLEGE, List.of("CREATE", "EDIT", "AUDIT")),
+            "ROLE_COLLEGE_ADMIN", new UserPermission(DataScope.COLLEGE, List.of("CREATE", "EDIT", "AUDIT", "EXPORT")),
             "ROLE_CERT_AUDITOR", new UserPermission(DataScope.COLLEGE, List.of("AUDIT")),
-            "ROLE_TEACHER", new UserPermission(DataScope.RELATED, List.of("CREATE")),
-            "ROLE_STUDENT", new UserPermission(DataScope.SELF, List.of("CREATE"))
+            "ROLE_TEACHER", new UserPermission(DataScope.RELATED, List.of("CREATE", "EXPORT")),
+            "ROLE_STUDENT", new UserPermission(DataScope.SELF, List.of("CREATE", "EXPORT"))
     );
 
     /**

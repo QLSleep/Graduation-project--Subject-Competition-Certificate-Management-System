@@ -90,4 +90,41 @@ public class FileServiceImpl implements FileService {
     public String getUploadPath() {
         return uploadPath;
     }
+
+    @Override
+    public void deleteFilesInDirectory(String folder) {
+        String folderPath = uploadPath + File.separator + folder;
+        File dir = Paths.get(folderPath).toFile();
+        if (dir.exists() && dir.isDirectory()) {
+            File[] files = dir.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    file.delete();
+                }
+            }
+        }
+    }
+
+    @Override
+    public void renameImage(String folder, String oldFilename, String newFilename) {
+        if (oldFilename.equals(newFilename)) {
+            return;
+        }
+        String folderPath = uploadPath + File.separator + folder;
+        Path oldPath = Paths.get(folderPath, oldFilename);
+        Path newPath = Paths.get(folderPath, newFilename);
+        try {
+            Files.move(oldPath, newPath);
+            log.info("文件重命名成功: {} -> {}", oldPath, newPath);
+        } catch (IOException e) {
+            log.error("文件重命名失败: {} -> {}", oldPath, newPath, e);
+            throw new BusinessException(ResultCode.SYSTEM_ERROR, "文件重命名失败");
+        }
+    }
+
+    @Override
+    public File getImageFile(String folder, String filename) {
+        String fullPath = uploadPath + File.separator + folder + File.separator + filename;
+        return Paths.get(fullPath).toFile();
+    }
 }
